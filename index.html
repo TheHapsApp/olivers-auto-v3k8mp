@@ -100,7 +100,7 @@
     border-radius:14px; padding:10px 26px; z-index:4; text-align:center; font-size:0.85rem; font-weight:bold;
     display:none;
   }
-  .nav-direction-panel.rerouting{background:rgba(217,101,50,0.92);}
+  .nav-direction-box.rerouting{background:rgba(217,101,50,0.92);}
   .nav-banner-close{
     position:absolute; top:6px; right:6px; background:none; border:none; color:#fff;
     font-size:0.9rem; cursor:pointer; opacity:0.85; padding:2px 4px; display:none;
@@ -173,6 +173,17 @@
     box-shadow:0 2px 0 rgba(0,0,0,0.2);
   }
   .mini-search-btn:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.2);}
+  .mini-nav-hint{
+    position:absolute; top:6px; left:34px; right:6px; z-index:3; display:none;
+    background:rgba(17,24,39,0.92); color:#fff; font-size:0.58rem; font-weight:bold;
+    border-radius:8px; padding:4px 5px; text-align:center; line-height:1.2;
+  }
+  .mini-trip-info{
+    position:absolute; bottom:6px; left:6px; right:6px; z-index:3; display:none;
+    background:rgba(0,0,0,0.75); color:#fff; border-radius:8px; padding:3px 4px;
+    font-size:0.52rem; gap:3px;
+  }
+  .mini-trip-info .trip-time{font-size:0.62rem;}
   .split-tabs{display:flex; justify-content:center; gap:6px; padding:6px;}
   .split-tab{background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:5px 9px; font-size:0.95rem; cursor:pointer;}
   .split-tab.selected{background:#fff;}
@@ -261,7 +272,7 @@
         <div class="quick-places" id="quickPlaces"></div>
         <div class="no-results" id="noResultsMsg">No results</div>
       </div>
-      <div class="nav-direction-panel" id="navDirectionPanel">
+      <div class="nav-direction-panel nav-direction-box" id="navDirectionPanel">
         <button class="nav-banner-close" id="navBannerClose" title="Stop trip">✖</button>
         <div class="nav-hint" id="navHint"></div>
       </div>
@@ -269,9 +280,9 @@
         <div class="trip-info" id="tripInfo">
           <span class="trip-time" id="tripTime"></span>
           <span class="trip-dot">·</span>
-          <span id="tripDistance"></span>
+          <span class="trip-distance" id="tripDistance"></span>
           <span class="trip-dot">·</span>
-          <span id="tripArrival"></span>
+          <span class="trip-arrival" id="tripArrival"></span>
         </div>
       </div>
     </div>
@@ -338,6 +349,14 @@
             <div class="car-dot">🚗</div>
           </div>
           <button class="mini-search-btn" id="msSearchBtn">🔍</button>
+          <div class="mini-nav-hint nav-hint nav-direction-box" id="miniNavHint"></div>
+          <div class="mini-trip-info trip-info" id="miniTripInfo">
+            <span class="trip-time"></span>
+            <span class="trip-dot">·</span>
+            <span class="trip-distance"></span>
+            <span class="trip-dot">·</span>
+            <span class="trip-arrival"></span>
+          </div>
         </div>
         <div class="split-panel right">
           <div class="split-tabs">
@@ -500,11 +519,13 @@ function updateDriveControlsVisibility(){
 function showDirectionPanel(){
   document.getElementById("mapSearchPanel").style.display = "none";
   document.getElementById("navDirectionPanel").style.display = "block";
+  document.getElementById("miniNavHint").style.display = "block";
 }
 function hideDirectionPanel(){
   document.getElementById("mapSearchPanel").style.display = "";
   document.getElementById("navDirectionPanel").style.display = "none";
-  document.getElementById("navDirectionPanel").classList.remove("rerouting");
+  document.getElementById("miniNavHint").style.display = "none";
+  document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.remove("rerouting"));
 }
 function stopTrip(){
   tone(300, 0, 0.15, "sine", 0.12);
@@ -549,37 +570,39 @@ function updateTripInfo(distancePercent){
   const distanceMiles = distancePercent * MILES_PER_PERCENT;
   const minutes = Math.max(1, Math.round(distanceMiles / traffic.speedMph));
   const arrival = new Date(Date.now() + minutes * 60000);
+  const timeText = `${minutes} min`;
+  const distanceText = formatDistance(distanceMiles);
+  const arrivalText = `Arrive ${arrival.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}`;
 
-  const tripInfo = document.getElementById("tripInfo");
-  tripInfo.style.display = "flex";
-  const tripTime = document.getElementById("tripTime");
-  tripTime.textContent = `${minutes} min`;
-  tripTime.style.color = traffic.color;
-  document.getElementById("tripDistance").textContent = formatDistance(distanceMiles);
-  document.getElementById("tripArrival").textContent =
-    `Arrive ${arrival.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}`;
+  document.querySelectorAll(".trip-info").forEach(el => el.style.display = "flex");
+  document.querySelectorAll(".trip-time").forEach(el => {
+    el.textContent = timeText;
+    el.style.color = traffic.color;
+  });
+  document.querySelectorAll(".trip-distance").forEach(el => el.textContent = distanceText);
+  document.querySelectorAll(".trip-arrival").forEach(el => el.textContent = arrivalText);
 }
 function updateNavBanner(){
   if (!navDestination) return;
-  const directionPanel = document.getElementById("navDirectionPanel");
-  const hint = document.getElementById("navHint");
   const pos = carPosition();
   clearTimeout(rerouteTimeout);
-  directionPanel.classList.remove("rerouting");
+  document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.remove("rerouting"));
 
   const distancePercent = distanceToDestination(pos);
   if (distancePercent <= ARRIVE_DISTANCE){
     tone(880, 0, 0.12, "sine", 0.15);
     tone(1046, 0.12, 0.18, "sine", 0.15);
-    hint.textContent = `You're at ${navDestination.label}! 🎉`;
+    document.querySelectorAll(".nav-hint").forEach(el => el.textContent = `You're at ${navDestination.label}! 🎉`);
     document.getElementById("navBanner").style.display = "none";
+    document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
     navDestination = null;
     navigationActive = false;
     updateDriveControlsVisibility();
     clearTimeout(arrivalTimeout);
     arrivalTimeout = setTimeout(hideDirectionPanel, 2000);
   } else {
-    hint.textContent = `🧭 Navigating to ${navDestination.label}... head ${directionHint(pos)}!`;
+    const hintText = `🧭 Navigating to ${navDestination.label}... head ${directionHint(pos)}!`;
+    document.querySelectorAll(".nav-hint").forEach(el => el.textContent = hintText);
     updateTripInfo(distancePercent);
   }
 }
@@ -598,9 +621,9 @@ function moveCar(dx, dy){
   if (distanceToDestination(carPosition()) >= distBefore){
     tone(220, 0, 0.2, "sawtooth", 0.1);
     navTrafficKey = pickRandomTraffic();
-    document.getElementById("navDirectionPanel").classList.add("rerouting");
-    document.getElementById("navHint").textContent = "🔄 Rerouting... that was the wrong way!";
-    document.getElementById("tripInfo").style.display = "none";
+    document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.add("rerouting"));
+    document.querySelectorAll(".nav-hint").forEach(el => el.textContent = "🔄 Rerouting... that was the wrong way!");
+    document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
     clearTimeout(rerouteTimeout);
     rerouteTimeout = setTimeout(updateNavBanner, 1500);
   } else {
