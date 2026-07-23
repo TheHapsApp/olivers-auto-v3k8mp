@@ -176,7 +176,7 @@
   }
   .mini-search-btn:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.2);}
   .mini-nav-hint{
-    position:absolute; top:6px; left:34px; right:6px; z-index:3; display:none;
+    position:absolute; top:6px; left:6px; right:6px; z-index:3; display:none;
     background:rgba(17,24,39,0.92); color:#fff; font-size:0.58rem; font-weight:bold;
     border-radius:8px; padding:4px 5px; text-align:center; line-height:1.2;
   }
@@ -522,11 +522,13 @@ function showDirectionPanel(){
   document.getElementById("mapSearchPanel").style.display = "none";
   document.getElementById("navDirectionPanel").style.display = "block";
   document.getElementById("miniNavHint").style.display = "block";
+  document.getElementById("msSearchBtn").style.display = "none";
 }
 function hideDirectionPanel(){
   document.getElementById("mapSearchPanel").style.display = "";
   document.getElementById("navDirectionPanel").style.display = "none";
   document.getElementById("miniNavHint").style.display = "none";
+  document.getElementById("msSearchBtn").style.display = "";
   document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.remove("rerouting"));
 }
 function stopTrip(){
