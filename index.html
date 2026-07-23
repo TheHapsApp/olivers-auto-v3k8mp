@@ -71,16 +71,30 @@
   .road{position:absolute; left:8%; top:0; width:16%; height:100%; background:#4a4a55; transform:skewX(-10deg);}
   .road::after{content:""; position:absolute; left:50%; top:0; width:2px; height:100%; background:repeating-linear-gradient(#fff 0 10px, transparent 10px 20px); transform:translateX(-50%);}
   .car-dot{position:absolute; left:20%; top:75%; font-size:1.5rem; transition:left 2s ease, top 2s ease; z-index:2;}
-  .car-dot.driving{left:76%; top:20%;}
   .home-pin{position:absolute; left:78%; top:14%; font-size:1.7rem; z-index:1;}
+  .dest-pin{position:absolute; font-size:1.6rem; z-index:1; display:none;}
   .map-topbar{position:absolute; top:8px; left:8px; right:8px; display:flex; gap:6px; z-index:3;}
-  .search-bar{flex:1; background:rgba(255,255,255,0.92); border-radius:999px; padding:7px 12px; font-size:0.8rem; color:#333; text-align:left;}
+  .search-bar{flex:1; background:rgba(255,255,255,0.92); border-radius:999px; padding:7px 12px; font-size:0.8rem; color:#333; text-align:left; border:none; font-family:inherit; cursor:pointer;}
   .home-shortcut{background:#fff; border:none; border-radius:999px; padding:7px 12px; font-weight:bold; font-size:0.8rem; color:#1a73e8; cursor:pointer; font-family:inherit;}
   .home-shortcut:active{transform:translateY(1px);}
   .nav-banner{
     position:absolute; bottom:8px; left:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff;
     padding:8px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
   }
+  .search-menu{
+    position:absolute; top:44px; left:8px; right:8px; background:rgba(17,24,39,0.95);
+    border-radius:14px; padding:10px; z-index:4; display:none;
+  }
+  .search-menu.open{display:block;}
+  .search-menu-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; color:#e5e7eb; font-size:0.8rem; font-weight:bold;}
+  .search-menu-close{background:none; border:none; color:#e5e7eb; font-size:1rem; cursor:pointer;}
+  .category-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
+  .category-btn{
+    background:rgba(255,255,255,0.12); border:none; border-radius:10px; padding:10px; color:#e5e7eb;
+    font-size:0.8rem; font-weight:bold; cursor:pointer; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .category-btn:active{transform:translateY(2px);}
 
   /* ---- spotify / pocket casts player ---- */
   .player-card{display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#e5e7eb; gap:8px; padding:10px;}
@@ -183,11 +197,24 @@
       <div class="map-bg">
         <div class="road"></div>
         <div class="home-pin">🏠</div>
+        <div class="dest-pin" id="destPin"></div>
         <div class="car-dot" id="mapCarDot">🚗</div>
       </div>
       <div class="map-topbar">
-        <div class="search-bar">🔍 Search here</div>
+        <button class="search-bar" id="searchBarBtn">🔍 Search here</button>
         <button class="home-shortcut" id="homeShortcutBtn">🏠 Home</button>
+      </div>
+      <div class="search-menu" id="searchMenu">
+        <div class="search-menu-header">
+          <span>Search nearby</span>
+          <button class="search-menu-close" id="searchMenuClose">✖</button>
+        </div>
+        <div class="category-grid">
+          <button class="category-btn" data-cat="food">🍔<span>Food</span></button>
+          <button class="category-btn" data-cat="gas">⛽<span>Gas</span></button>
+          <button class="category-btn" data-cat="coffee">☕<span>Coffee</span></button>
+          <button class="category-btn" data-cat="parking">🅿️<span>Parking</span></button>
+        </div>
       </div>
       <div class="nav-banner" id="navBanner"></div>
     </div>
@@ -325,7 +352,11 @@ function resetAppStates(){
   document.getElementById("teamsActive").style.display = "none";
 
   document.getElementById("navBanner").style.display = "none";
-  document.getElementById("mapCarDot").classList.remove("driving");
+  const mapCarDot = document.getElementById("mapCarDot");
+  mapCarDot.style.left = "20%";
+  mapCarDot.style.top = "75%";
+  document.getElementById("destPin").style.display = "none";
+  document.getElementById("searchMenu").classList.remove("open");
 }
 
 function showCarScreen(id){
@@ -338,20 +369,49 @@ document.querySelectorAll(".car-app").forEach(b => b.addEventListener("click", (
 backBtn.addEventListener("click", () => showCarScreen("home"));
 
 // ---------- maps ----------
-function goHome(carDotId, bannerId){
-  const dot = document.getElementById(carDotId);
-  const banner = document.getElementById(bannerId);
+const CATEGORIES = {
+  food:    { emoji:"🍔", label:"Food",    left:"55%", top:"60%", minutes:8 },
+  gas:     { emoji:"⛽", label:"Gas",     left:"35%", top:"25%", minutes:5 },
+  coffee:  { emoji:"☕", label:"Coffee",  left:"60%", top:"20%", minutes:6 },
+  parking: { emoji:"🅿️", label:"Parking", left:"45%", top:"45%", minutes:4 },
+};
+
+function goToDestination(dot, banner, left, top, label, minutes){
   tone(880, 0, 0.1, "sine", 0.15);
   tone(660, 0.08, 0.15, "sine", 0.12);
-  dot.classList.add("driving");
-  banner.textContent = "Navigating home... 12 min";
+  dot.style.left = left;
+  dot.style.top = top;
+  banner.textContent = `Navigating to ${label}... ${minutes} min`;
   banner.style.display = "block";
-  setTimeout(() => { banner.textContent = "You're home! 🎉"; }, 2000);
+  setTimeout(() => { banner.textContent = `You're at ${label}! 🎉`; }, 2000);
 }
-document.getElementById("homeShortcutBtn").addEventListener("click", () => goHome("mapCarDot", "navBanner"));
+document.getElementById("homeShortcutBtn").addEventListener("click", () => {
+  document.getElementById("searchMenu").classList.remove("open");
+  document.getElementById("destPin").style.display = "none";
+  goToDestination(document.getElementById("mapCarDot"), document.getElementById("navBanner"), "78%", "14%", "Home", 12);
+});
 document.getElementById("msHomeBtn").addEventListener("click", () => {
   tone(880, 0, 0.1, "sine", 0.15);
   tone(660, 0.08, 0.15, "sine", 0.12);
+});
+
+document.getElementById("searchBarBtn").addEventListener("click", () => {
+  document.getElementById("searchMenu").classList.toggle("open");
+});
+document.getElementById("searchMenuClose").addEventListener("click", () => {
+  document.getElementById("searchMenu").classList.remove("open");
+});
+document.querySelectorAll(".category-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const cat = CATEGORIES[btn.dataset.cat];
+    const destPin = document.getElementById("destPin");
+    destPin.textContent = cat.emoji;
+    destPin.style.left = cat.left;
+    destPin.style.top = cat.top;
+    destPin.style.display = "block";
+    document.getElementById("searchMenu").classList.remove("open");
+    goToDestination(document.getElementById("mapCarDot"), document.getElementById("navBanner"), cat.left, cat.top, cat.label, cat.minutes);
+  });
 });
 
 // ---------- spotify ----------
