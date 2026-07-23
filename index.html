@@ -167,6 +167,8 @@
   .split{display:flex; height:100%; gap:6px; padding:6px;}
   .split-panel{flex:1; background:#1f2937; border-radius:10px; position:relative; overflow:hidden; display:flex; flex-direction:column;}
   .split-panel.left .map-bg{position:absolute; inset:0;}
+  .split-panel.left{cursor:pointer;}
+  .split-panel.left:active{filter:brightness(0.85);}
   .mini-search-btn{
     position:absolute; top:6px; left:6px; z-index:3; width:26px; height:26px; border-radius:50%;
     background:#fff; border:none; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
@@ -635,10 +637,15 @@ document.getElementById("driveDown").addEventListener("click", () => moveCar(0, 
 document.getElementById("driveLeft").addEventListener("click", () => moveCar(-DRIVE_STEP, 0));
 document.getElementById("driveRight").addEventListener("click", () => moveCar(DRIVE_STEP, 0));
 
-document.getElementById("msSearchBtn").addEventListener("click", () => {
+document.getElementById("msSearchBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
   tone(700, 0, 0.08, "sine", 0.1);
   showCarScreen("maps");
   document.getElementById("searchInput").focus();
+});
+document.querySelector(".split-panel.left").addEventListener("click", () => {
+  tone(700, 0, 0.08, "sine", 0.1);
+  showCarScreen("maps");
 });
 
 // "Places you've been lately" — persists for the session, most recent first.
