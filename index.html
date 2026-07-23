@@ -285,6 +285,7 @@
         <div class="split-panel left">
           <div class="map-bg">
             <div class="road"></div>
+            <div class="car-dot">🚗</div>
           </div>
           <button class="mini-search-btn" id="msSearchBtn">🔍</button>
         </div>
@@ -356,9 +357,10 @@ function resetAppStates(){
   document.getElementById("teamsActive").style.display = "none";
 
   document.getElementById("navBanner").style.display = "none";
-  const mapCarDot = document.getElementById("mapCarDot");
-  mapCarDot.style.left = "20%";
-  mapCarDot.style.top = "75%";
+  document.querySelectorAll(".car-dot").forEach(dot => {
+    dot.style.left = "20%";
+    dot.style.top = "75%";
+  });
   document.getElementById("destPin").style.display = "none";
   document.getElementById("searchMenu").classList.remove("open");
   document.getElementById("searchInput").value = "";
@@ -383,11 +385,13 @@ const CATEGORIES = {
   parking: { emoji:"🅿️", label:"Parking", left:"45%", top:"45%", minutes:4 },
 };
 
-function goToDestination(dot, banner, left, top, label, minutes){
+function goToDestination(banner, left, top, label, minutes){
   tone(880, 0, 0.1, "sine", 0.15);
   tone(660, 0.08, 0.15, "sine", 0.12);
-  dot.style.left = left;
-  dot.style.top = top;
+  document.querySelectorAll(".car-dot").forEach(dot => {
+    dot.style.left = left;
+    dot.style.top = top;
+  });
   banner.textContent = `Navigating to ${label}... ${minutes} min`;
   banner.style.display = "block";
   setTimeout(() => { banner.textContent = `You're at ${label}! 🎉`; }, 2000);
@@ -395,7 +399,7 @@ function goToDestination(dot, banner, left, top, label, minutes){
 document.getElementById("homeShortcutBtn").addEventListener("click", () => {
   document.getElementById("searchMenu").classList.remove("open");
   document.getElementById("destPin").style.display = "none";
-  goToDestination(document.getElementById("mapCarDot"), document.getElementById("navBanner"), "78%", "14%", "Home", 12);
+  goToDestination(document.getElementById("navBanner"), "78%", "14%", "Home", 12);
 });
 document.getElementById("msSearchBtn").addEventListener("click", () => {
   tone(700, 0, 0.08, "sine", 0.1);
@@ -429,7 +433,7 @@ document.querySelectorAll(".category-btn").forEach(btn => {
     destPin.style.top = cat.top;
     destPin.style.display = "block";
     document.getElementById("searchMenu").classList.remove("open");
-    goToDestination(document.getElementById("mapCarDot"), document.getElementById("navBanner"), cat.left, cat.top, cat.label, cat.minutes);
+    goToDestination(document.getElementById("navBanner"), cat.left, cat.top, cat.label, cat.minutes);
   });
 });
 
