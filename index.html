@@ -88,6 +88,8 @@
   .search-menu.open{display:block;}
   .search-menu-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; color:#e5e7eb; font-size:0.8rem; font-weight:bold;}
   .search-menu-close{background:none; border:none; color:#e5e7eb; font-size:1rem; cursor:pointer;}
+  .search-input{width:100%; background:rgba(255,255,255,0.92); border:none; border-radius:10px; padding:8px 10px; font-size:0.8rem; color:#333; font-family:inherit; margin-bottom:8px;}
+  .no-results{display:none; color:#e5e7eb; font-size:0.8rem; opacity:0.8; padding:10px; text-align:center;}
   .category-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
   .category-btn{
     background:rgba(255,255,255,0.12); border:none; border-radius:10px; padding:10px; color:#e5e7eb;
@@ -212,12 +214,14 @@
           <span>Search nearby</span>
           <button class="search-menu-close" id="searchMenuClose">✖</button>
         </div>
-        <div class="category-grid">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Type a place...">
+        <div class="category-grid" id="categoryGrid">
           <button class="category-btn" data-cat="food">🍔<span>Food</span></button>
           <button class="category-btn" data-cat="gas">⛽<span>Gas</span></button>
           <button class="category-btn" data-cat="coffee">☕<span>Coffee</span></button>
           <button class="category-btn" data-cat="parking">🅿️<span>Parking</span></button>
         </div>
+        <div class="no-results" id="noResultsMsg">No results</div>
       </div>
       <div class="nav-banner" id="navBanner"></div>
     </div>
@@ -357,6 +361,9 @@ function resetAppStates(){
   mapCarDot.style.top = "75%";
   document.getElementById("destPin").style.display = "none";
   document.getElementById("searchMenu").classList.remove("open");
+  document.getElementById("searchInput").value = "";
+  document.querySelectorAll(".category-btn").forEach(b => b.style.display = "");
+  document.getElementById("noResultsMsg").style.display = "none";
 }
 
 function showCarScreen(id){
@@ -392,6 +399,9 @@ document.getElementById("homeShortcutBtn").addEventListener("click", () => {
 });
 document.getElementById("msSearchBtn").addEventListener("click", () => {
   tone(700, 0, 0.08, "sine", 0.1);
+  showCarScreen("maps");
+  document.getElementById("searchMenu").classList.add("open");
+  document.getElementById("searchInput").focus();
 });
 
 document.getElementById("searchBarBtn").addEventListener("click", () => {
@@ -399,6 +409,16 @@ document.getElementById("searchBarBtn").addEventListener("click", () => {
 });
 document.getElementById("searchMenuClose").addEventListener("click", () => {
   document.getElementById("searchMenu").classList.remove("open");
+});
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  let anyVisible = false;
+  document.querySelectorAll(".category-btn").forEach(btn => {
+    const match = CATEGORIES[btn.dataset.cat].label.toLowerCase().includes(q);
+    btn.style.display = match ? "" : "none";
+    if (match) anyVisible = true;
+  });
+  document.getElementById("noResultsMsg").style.display = (q && !anyVisible) ? "block" : "none";
 });
 document.querySelectorAll(".category-btn").forEach(btn => {
   btn.addEventListener("click", () => {
