@@ -167,6 +167,27 @@
   .mini-title{font-size:0.7rem; text-align:center; padding:0 8px;}
   .mini-play{background:none; border:none; font-size:1.1rem; color:#e5e7eb; cursor:pointer;}
 
+  /* ---- drive controls (manual steering while navigating) ---- */
+  .drive-controls{
+    max-width:600px; margin:16px auto 0; display:none;
+    flex-direction:column; align-items:center; gap:8px;
+  }
+  .drive-controls.visible{display:flex;}
+  .drive-controls-label{color:#fff; font-size:0.85rem; font-weight:bold; text-shadow:1px 1px 0 rgba(0,0,0,0.12);}
+  .dpad{
+    display:grid; grid-template-columns:repeat(3,48px); grid-template-rows:repeat(2,48px);
+    gap:6px; justify-content:center;
+  }
+  .dpad-btn{
+    background:rgba(255,255,255,0.9); border:none; border-radius:12px; font-size:1.3rem; cursor:pointer;
+    box-shadow:0 4px 0 rgba(0,0,0,0.25);
+  }
+  .dpad-btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.25);}
+  .dpad-up{grid-column:2; grid-row:1;}
+  .dpad-left{grid-column:1; grid-row:2;}
+  .dpad-down{grid-column:2; grid-row:2;}
+  .dpad-right{grid-column:3; grid-row:2;}
+
   footer{margin-top:22px; font-size:0.8rem; color:#fff; opacity:0.85; text-shadow:1px 1px 0 rgba(0,0,0,0.1);}
 </style>
 </head>
@@ -306,6 +327,16 @@
     <div class="assistant-banner" id="assistantBanner"></div>
   </div>
 
+  <div class="drive-controls" id="driveControls">
+    <div class="drive-controls-label">🕹️ You're driving! Steer the car:</div>
+    <div class="dpad">
+      <button class="dpad-btn dpad-up" id="driveUp">⬆️</button>
+      <button class="dpad-btn dpad-left" id="driveLeft">⬅️</button>
+      <button class="dpad-btn dpad-down" id="driveDown">⬇️</button>
+      <button class="dpad-btn dpad-right" id="driveRight">➡️</button>
+    </div>
+  </div>
+
   <footer>Made for Oliver 🚗</footer>
 
 <script>
@@ -370,6 +401,9 @@ function resetAppStates(){
   document.getElementById("searchInput").value = "";
   quickPlacesCollapsed = false;
   renderQuickPlaces("");
+
+  navigationActive = false;
+  updateDriveControlsVisibility();
 }
 
 function showCarScreen(id){
@@ -400,7 +434,31 @@ function goToDestination(banner, left, top, label, minutes){
   banner.textContent = `Navigating to ${label}... ${minutes} min`;
   banner.style.display = "block";
   setTimeout(() => { banner.textContent = `You're at ${label}! 🎉`; }, 2000);
+
+  navigationActive = true;
+  updateDriveControlsVisibility();
 }
+
+// ---------- drive controls (manual steering while navigating) ----------
+let navigationActive = false;
+const DRIVE_STEP = 4;
+function updateDriveControlsVisibility(){
+  document.getElementById("driveControls").classList.toggle("visible", navigationActive);
+}
+function moveCar(dx, dy){
+  tone(500, 0, 0.06, "triangle", 0.08);
+  document.querySelectorAll(".car-dot").forEach(dot => {
+    const left = Math.min(95, Math.max(5, parseFloat(dot.style.left) + dx));
+    const top = Math.min(95, Math.max(5, parseFloat(dot.style.top) + dy));
+    dot.style.left = left + "%";
+    dot.style.top = top + "%";
+  });
+}
+document.getElementById("driveUp").addEventListener("click", () => moveCar(0, -DRIVE_STEP));
+document.getElementById("driveDown").addEventListener("click", () => moveCar(0, DRIVE_STEP));
+document.getElementById("driveLeft").addEventListener("click", () => moveCar(-DRIVE_STEP, 0));
+document.getElementById("driveRight").addEventListener("click", () => moveCar(DRIVE_STEP, 0));
+
 document.getElementById("msSearchBtn").addEventListener("click", () => {
   tone(700, 0, 0.08, "sine", 0.1);
   showCarScreen("maps");
