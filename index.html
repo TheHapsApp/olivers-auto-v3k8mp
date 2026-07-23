@@ -91,6 +91,9 @@
   .trip-info{display:flex; justify-content:center; align-items:baseline; gap:6px; font-size:0.78rem; opacity:0.95;}
   .trip-time{font-weight:bold; font-size:0.9rem;}
   .trip-dot{opacity:0.6;}
+  .trip-exit-btn{background:none; border:none; color:#fff; cursor:pointer; font-size:0.8rem; opacity:0.85; padding:0 2px; line-height:1;}
+  .trip-exit-btn:active{transform:translateY(1px);}
+  .mini-trip-info .trip-exit-btn{font-size:0.6rem;}
   .map-search-panel{
     position:absolute; top:8px; left:8px; right:8px; background:rgba(17,24,39,0.95);
     border-radius:14px; padding:10px; z-index:4;
@@ -280,6 +283,7 @@
       </div>
       <div class="nav-banner" id="navBanner">
         <div class="trip-info" id="tripInfo">
+          <button class="trip-exit-btn" title="Stop trip">✖</button>
           <span class="trip-time" id="tripTime"></span>
           <span class="trip-dot">·</span>
           <span class="trip-distance" id="tripDistance"></span>
@@ -353,6 +357,7 @@
           <button class="mini-search-btn" id="msSearchBtn">🔍</button>
           <div class="mini-nav-hint nav-hint nav-direction-box" id="miniNavHint"></div>
           <div class="mini-trip-info trip-info" id="miniTripInfo">
+            <button class="trip-exit-btn" title="Stop trip">✖</button>
             <span class="trip-time"></span>
             <span class="trip-dot">·</span>
             <span class="trip-distance"></span>
@@ -544,6 +549,10 @@ function stopTrip(){
   document.getElementById("destPin").style.display = "none";
 }
 document.getElementById("navBannerClose").addEventListener("click", stopTrip);
+document.querySelectorAll(".trip-exit-btn").forEach(btn => btn.addEventListener("click", (e) => {
+  e.stopPropagation(); // don't let it bubble into the "tap map to expand" handler on Multi-Screen
+  stopTrip();
+}));
 function carPosition(){
   const dot = document.getElementById("mapCarDot");
   return { left: parseFloat(dot.style.left), top: parseFloat(dot.style.top) };
