@@ -141,9 +141,12 @@
   .split{display:flex; height:100%; gap:6px; padding:6px;}
   .split-panel{flex:1; background:#1f2937; border-radius:10px; position:relative; overflow:hidden; display:flex; flex-direction:column;}
   .split-panel.left .map-bg{position:absolute; inset:0;}
-  .map-topbar.small{position:absolute; top:6px; left:6px; right:6px; display:flex; gap:5px; z-index:3;}
-  .search-bar.small{font-size:0.65rem; padding:5px 8px;}
-  .home-shortcut.small{font-size:0.65rem; padding:5px 8px;}
+  .mini-search-btn{
+    position:absolute; top:6px; left:6px; z-index:3; width:26px; height:26px; border-radius:50%;
+    background:#fff; border:none; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 0 rgba(0,0,0,0.2);
+  }
+  .mini-search-btn:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.2);}
   .split-tabs{display:flex; justify-content:center; gap:6px; padding:6px;}
   .split-tab{background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:5px 9px; font-size:0.95rem; cursor:pointer;}
   .split-tab.selected{background:#fff;}
@@ -279,10 +282,7 @@
           <div class="map-bg">
             <div class="road"></div>
           </div>
-          <div class="map-topbar small">
-            <div class="search-bar small">🔍 Search</div>
-            <button class="home-shortcut small" id="msHomeBtn">🏠 Home</button>
-          </div>
+          <button class="mini-search-btn" id="msSearchBtn">🔍</button>
         </div>
         <div class="split-panel right">
           <div class="split-tabs">
@@ -390,9 +390,8 @@ document.getElementById("homeShortcutBtn").addEventListener("click", () => {
   document.getElementById("destPin").style.display = "none";
   goToDestination(document.getElementById("mapCarDot"), document.getElementById("navBanner"), "78%", "14%", "Home", 12);
 });
-document.getElementById("msHomeBtn").addEventListener("click", () => {
-  tone(880, 0, 0.1, "sine", 0.15);
-  tone(660, 0.08, 0.15, "sine", 0.12);
+document.getElementById("msSearchBtn").addEventListener("click", () => {
+  tone(700, 0, 0.08, "sine", 0.1);
 });
 
 document.getElementById("searchBarBtn").addEventListener("click", () => {
