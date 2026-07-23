@@ -418,22 +418,24 @@ function resetAppStates(){
   document.getElementById("teamsIncoming").style.display = "none";
   document.getElementById("teamsActive").style.display = "none";
 
-  clearTimeout(rerouteTimeout);
-  clearTimeout(arrivalTimeout);
-  document.getElementById("navBanner").style.display = "none";
-  hideDirectionPanel();
-  navTrafficKey = null;
-  document.querySelectorAll(".car-dot").forEach(dot => {
-    dot.style.left = "20%";
-    dot.style.top = "75%";
-  });
-  document.getElementById("destPin").style.display = "none";
+  // A trip in progress keeps running when you switch screens (e.g. to
+  // Multi-Screen) — only clear navigation state here if there's no active trip.
+  if (!navigationActive){
+    clearTimeout(rerouteTimeout);
+    clearTimeout(arrivalTimeout);
+    document.getElementById("navBanner").style.display = "none";
+    hideDirectionPanel();
+    navTrafficKey = null;
+    navDestination = null;
+    document.querySelectorAll(".car-dot").forEach(dot => {
+      dot.style.left = "20%";
+      dot.style.top = "75%";
+    });
+    document.getElementById("destPin").style.display = "none";
+  }
   document.getElementById("searchInput").value = "";
   quickPlacesCollapsed = false;
   renderQuickPlaces("");
-
-  navDestination = null;
-  navigationActive = false;
   updateDriveControlsVisibility();
 }
 
@@ -442,6 +444,9 @@ function showCarScreen(id){
   document.querySelectorAll(".car-screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + id).classList.add("active");
   backBtn.style.visibility = id === "home" ? "hidden" : "visible";
+  if (id === "maps" && navigationActive){
+    updateNavBanner(); // refresh the ETA/arrival clock in case time passed while away
+  }
 }
 document.querySelectorAll(".car-app").forEach(b => b.addEventListener("click", () => showCarScreen(b.dataset.screen)));
 backBtn.addEventListener("click", () => showCarScreen("home"));
