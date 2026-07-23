@@ -546,6 +546,7 @@ function stopTrip(){
   updateDriveControlsVisibility();
   hideDirectionPanel();
   document.getElementById("navBanner").style.display = "none";
+  document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
   document.getElementById("destPin").style.display = "none";
 }
 document.getElementById("navBannerClose").addEventListener("click", stopTrip);
