@@ -88,6 +88,7 @@
     position:absolute; bottom:8px; left:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff;
     padding:8px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
   }
+  .nav-banner.rerouting{background:rgba(217,101,50,0.92);}
   .map-search-panel{
     position:absolute; top:8px; left:8px; right:8px; background:rgba(17,24,39,0.95);
     border-radius:14px; padding:10px; z-index:4;
@@ -392,7 +393,9 @@ function resetAppStates(){
   document.getElementById("teamsIncoming").style.display = "none";
   document.getElementById("teamsActive").style.display = "none";
 
+  clearTimeout(rerouteTimeout);
   document.getElementById("navBanner").style.display = "none";
+  document.getElementById("navBanner").classList.remove("rerouting");
   document.querySelectorAll(".car-dot").forEach(dot => {
     dot.style.left = "20%";
     dot.style.top = "75%";
@@ -402,6 +405,7 @@ function resetAppStates(){
   quickPlacesCollapsed = false;
   renderQuickPlaces("");
 
+  navDestination = null;
   navigationActive = false;
   updateDriveControlsVisibility();
 }
@@ -417,42 +421,90 @@ backBtn.addEventListener("click", () => showCarScreen("home"));
 
 // ---------- maps ----------
 const CATEGORIES = {
-  home:    { emoji:"🏠", label:"Home",    left:"78%", top:"14%", minutes:12 },
-  food:    { emoji:"🍔", label:"Food",    left:"55%", top:"60%", minutes:8 },
-  gas:     { emoji:"⛽", label:"Gas",     left:"35%", top:"25%", minutes:5 },
-  coffee:  { emoji:"☕", label:"Coffee",  left:"60%", top:"20%", minutes:6 },
-  parking: { emoji:"🅿️", label:"Parking", left:"45%", top:"45%", minutes:4 },
+  home:    { emoji:"🏠", label:"Home",    left:"78%", top:"14%" },
+  food:    { emoji:"🍔", label:"Food",    left:"55%", top:"60%" },
+  gas:     { emoji:"⛽", label:"Gas",     left:"35%", top:"25%" },
+  coffee:  { emoji:"☕", label:"Coffee",  left:"60%", top:"20%" },
+  parking: { emoji:"🅿️", label:"Parking", left:"45%", top:"45%" },
 };
 
-function goToDestination(banner, left, top, label, minutes){
+// You drive there yourself with the arrows — the car never auto-moves.
+// Google just tells you which way to go, and reroutes if you go the wrong way.
+function goToDestination(left, top, label){
   tone(880, 0, 0.1, "sine", 0.15);
   tone(660, 0.08, 0.15, "sine", 0.12);
-  document.querySelectorAll(".car-dot").forEach(dot => {
-    dot.style.left = left;
-    dot.style.top = top;
-  });
-  banner.textContent = `Navigating to ${label}... ${minutes} min`;
-  banner.style.display = "block";
-  setTimeout(() => { banner.textContent = `You're at ${label}! 🎉`; }, 2000);
 
+  navDestination = { left: parseFloat(left), top: parseFloat(top), label };
   navigationActive = true;
   updateDriveControlsVisibility();
+
+  document.getElementById("navBanner").style.display = "block";
+  updateNavBanner();
 }
 
 // ---------- drive controls (manual steering while navigating) ----------
 let navigationActive = false;
+let navDestination = null;
+let rerouteTimeout = null;
 const DRIVE_STEP = 4;
+const ARRIVE_DISTANCE = 6;
+
 function updateDriveControlsVisibility(){
   document.getElementById("driveControls").classList.toggle("visible", navigationActive);
 }
+function carPosition(){
+  const dot = document.getElementById("mapCarDot");
+  return { left: parseFloat(dot.style.left), top: parseFloat(dot.style.top) };
+}
+function distanceToDestination(pos){
+  return Math.hypot(navDestination.left - pos.left, navDestination.top - pos.top);
+}
+function directionHint(pos){
+  const dLeft = navDestination.left - pos.left;
+  const dTop = navDestination.top - pos.top;
+  return Math.abs(dLeft) > Math.abs(dTop)
+    ? (dLeft > 0 ? "➡️ right" : "⬅️ left")
+    : (dTop > 0 ? "⬇️ down" : "⬆️ up");
+}
+function updateNavBanner(){
+  if (!navDestination) return;
+  const banner = document.getElementById("navBanner");
+  const pos = carPosition();
+  clearTimeout(rerouteTimeout);
+  banner.classList.remove("rerouting");
+  if (distanceToDestination(pos) <= ARRIVE_DISTANCE){
+    tone(880, 0, 0.12, "sine", 0.15);
+    tone(1046, 0.12, 0.18, "sine", 0.15);
+    banner.textContent = `You're at ${navDestination.label}! 🎉`;
+    navDestination = null;
+    navigationActive = false;
+    updateDriveControlsVisibility();
+  } else {
+    banner.textContent = `🧭 Navigating to ${navDestination.label}... head ${directionHint(pos)}!`;
+  }
+}
 function moveCar(dx, dy){
   tone(500, 0, 0.06, "triangle", 0.08);
+  const distBefore = navDestination ? distanceToDestination(carPosition()) : null;
+
   document.querySelectorAll(".car-dot").forEach(dot => {
     const left = Math.min(95, Math.max(5, parseFloat(dot.style.left) + dx));
     const top = Math.min(95, Math.max(5, parseFloat(dot.style.top) + dy));
     dot.style.left = left + "%";
     dot.style.top = top + "%";
   });
+
+  if (!navDestination) return;
+  if (distanceToDestination(carPosition()) >= distBefore){
+    tone(220, 0, 0.2, "sawtooth", 0.1);
+    const banner = document.getElementById("navBanner");
+    banner.classList.add("rerouting");
+    banner.textContent = "🔄 Rerouting... that was the wrong way!";
+    clearTimeout(rerouteTimeout);
+    rerouteTimeout = setTimeout(updateNavBanner, 1500);
+  } else {
+    updateNavBanner();
+  }
 }
 document.getElementById("driveUp").addEventListener("click", () => moveCar(0, -DRIVE_STEP));
 document.getElementById("driveDown").addEventListener("click", () => moveCar(0, DRIVE_STEP));
@@ -521,7 +573,7 @@ function goToPlace(catId){
     destPin.style.top = cat.top;
     destPin.style.display = "block";
   }
-  goToDestination(document.getElementById("navBanner"), cat.left, cat.top, cat.label, cat.minutes);
+  goToDestination(cat.left, cat.top, cat.label);
   recordRecentPlace(catId);
   renderQuickPlaces(document.getElementById("searchInput").value.trim().toLowerCase());
 }
