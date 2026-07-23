@@ -89,6 +89,9 @@
     padding:8px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
   }
   .nav-banner.rerouting{background:rgba(217,101,50,0.92);}
+  .trip-info{display:flex; justify-content:center; align-items:baseline; gap:6px; font-size:0.78rem; margin-top:4px; opacity:0.95;}
+  .trip-time{font-weight:bold; font-size:0.9rem;}
+  .trip-dot{opacity:0.6;}
   .map-search-panel{
     position:absolute; top:8px; left:8px; right:8px; background:rgba(17,24,39,0.95);
     border-radius:14px; padding:10px; z-index:4;
@@ -248,7 +251,16 @@
         <div class="quick-places" id="quickPlaces"></div>
         <div class="no-results" id="noResultsMsg">No results</div>
       </div>
-      <div class="nav-banner" id="navBanner"></div>
+      <div class="nav-banner" id="navBanner">
+        <div class="nav-hint" id="navHint"></div>
+        <div class="trip-info" id="tripInfo">
+          <span class="trip-time" id="tripTime"></span>
+          <span class="trip-dot">·</span>
+          <span id="tripDistance"></span>
+          <span class="trip-dot">·</span>
+          <span id="tripArrival"></span>
+        </div>
+      </div>
     </div>
 
     <!-- ==== SPOTIFY ==== -->
@@ -396,6 +408,7 @@ function resetAppStates(){
   clearTimeout(rerouteTimeout);
   document.getElementById("navBanner").style.display = "none";
   document.getElementById("navBanner").classList.remove("rerouting");
+  navTrafficKey = null;
   document.querySelectorAll(".car-dot").forEach(dot => {
     dot.style.left = "20%";
     dot.style.top = "75%";
@@ -435,6 +448,7 @@ function goToDestination(left, top, label){
   tone(660, 0.08, 0.15, "sine", 0.12);
 
   navDestination = { left: parseFloat(left), top: parseFloat(top), label };
+  navTrafficKey = pickRandomTraffic();
   navigationActive = true;
   updateDriveControlsVisibility();
 
@@ -445,9 +459,16 @@ function goToDestination(left, top, label){
 // ---------- drive controls (manual steering while navigating) ----------
 let navigationActive = false;
 let navDestination = null;
+let navTrafficKey = null;
 let rerouteTimeout = null;
 const DRIVE_STEP = 4;
 const ARRIVE_DISTANCE = 6;
+const MILES_PER_PERCENT = 0.05; // fake scale from map-percent distance to miles
+const TRAFFIC_LEVELS = {
+  light:    { color:"#34a853", speedMph:0.6 },  // miles per minute
+  moderate: { color:"#fbbc04", speedMph:0.35 },
+  heavy:    { color:"#ea4335", speedMph:0.18 },
+};
 
 function updateDriveControlsVisibility(){
   document.getElementById("driveControls").classList.toggle("visible", navigationActive);
@@ -466,21 +487,52 @@ function directionHint(pos){
     ? (dLeft > 0 ? "➡️ right" : "⬅️ left")
     : (dTop > 0 ? "⬇️ down" : "⬆️ up");
 }
+function pickRandomTraffic(){
+  const keys = Object.keys(TRAFFIC_LEVELS);
+  return keys[Math.floor(Math.random() * keys.length)];
+}
+function formatDistance(miles){
+  if (miles < 1){
+    const feet = Math.round((miles * 5280) / 10) * 10;
+    return `${feet.toLocaleString()} ft`;
+  }
+  return `${miles.toFixed(1)} mi`;
+}
+function updateTripInfo(distancePercent){
+  const traffic = TRAFFIC_LEVELS[navTrafficKey];
+  const distanceMiles = distancePercent * MILES_PER_PERCENT;
+  const minutes = Math.max(1, Math.round(distanceMiles / traffic.speedMph));
+  const arrival = new Date(Date.now() + minutes * 60000);
+
+  const tripInfo = document.getElementById("tripInfo");
+  tripInfo.style.display = "flex";
+  const tripTime = document.getElementById("tripTime");
+  tripTime.textContent = `${minutes} min`;
+  tripTime.style.color = traffic.color;
+  document.getElementById("tripDistance").textContent = formatDistance(distanceMiles);
+  document.getElementById("tripArrival").textContent =
+    `Arrive ${arrival.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}`;
+}
 function updateNavBanner(){
   if (!navDestination) return;
   const banner = document.getElementById("navBanner");
+  const hint = document.getElementById("navHint");
   const pos = carPosition();
   clearTimeout(rerouteTimeout);
   banner.classList.remove("rerouting");
-  if (distanceToDestination(pos) <= ARRIVE_DISTANCE){
+
+  const distancePercent = distanceToDestination(pos);
+  if (distancePercent <= ARRIVE_DISTANCE){
     tone(880, 0, 0.12, "sine", 0.15);
     tone(1046, 0.12, 0.18, "sine", 0.15);
-    banner.textContent = `You're at ${navDestination.label}! 🎉`;
+    hint.textContent = `You're at ${navDestination.label}! 🎉`;
+    document.getElementById("tripInfo").style.display = "none";
     navDestination = null;
     navigationActive = false;
     updateDriveControlsVisibility();
   } else {
-    banner.textContent = `🧭 Navigating to ${navDestination.label}... head ${directionHint(pos)}!`;
+    hint.textContent = `🧭 Navigating to ${navDestination.label}... head ${directionHint(pos)}!`;
+    updateTripInfo(distancePercent);
   }
 }
 function moveCar(dx, dy){
@@ -497,9 +549,11 @@ function moveCar(dx, dy){
   if (!navDestination) return;
   if (distanceToDestination(carPosition()) >= distBefore){
     tone(220, 0, 0.2, "sawtooth", 0.1);
+    navTrafficKey = pickRandomTraffic();
     const banner = document.getElementById("navBanner");
     banner.classList.add("rerouting");
-    banner.textContent = "🔄 Rerouting... that was the wrong way!";
+    document.getElementById("navHint").textContent = "🔄 Rerouting... that was the wrong way!";
+    document.getElementById("tripInfo").style.display = "none";
     clearTimeout(rerouteTimeout);
     rerouteTimeout = setTimeout(updateNavBanner, 1500);
   } else {
