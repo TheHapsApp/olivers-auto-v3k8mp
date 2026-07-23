@@ -86,21 +86,26 @@
   .dest-pin{position:absolute; font-size:1.6rem; z-index:1; display:none;}
   .nav-banner{
     position:absolute; bottom:8px; left:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff;
-    padding:8px 26px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
+    padding:8px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
   }
-  .nav-banner.rerouting{background:rgba(217,101,50,0.92);}
-  .nav-banner-close{
-    position:absolute; top:4px; right:6px; background:none; border:none; color:#fff;
-    font-size:0.9rem; cursor:pointer; opacity:0.85; padding:2px 4px; display:none;
-  }
-  .nav-banner-close:active{transform:translateY(1px);}
-  .trip-info{display:flex; justify-content:center; align-items:baseline; gap:6px; font-size:0.78rem; margin-top:4px; opacity:0.95;}
+  .trip-info{display:flex; justify-content:center; align-items:baseline; gap:6px; font-size:0.78rem; opacity:0.95;}
   .trip-time{font-weight:bold; font-size:0.9rem;}
   .trip-dot{opacity:0.6;}
   .map-search-panel{
     position:absolute; top:8px; left:8px; right:8px; background:rgba(17,24,39,0.95);
     border-radius:14px; padding:10px; z-index:4;
   }
+  .nav-direction-panel{
+    position:absolute; top:8px; left:8px; right:8px; background:rgba(17,24,39,0.95); color:#fff;
+    border-radius:14px; padding:10px 26px; z-index:4; text-align:center; font-size:0.85rem; font-weight:bold;
+    display:none;
+  }
+  .nav-direction-panel.rerouting{background:rgba(217,101,50,0.92);}
+  .nav-banner-close{
+    position:absolute; top:6px; right:6px; background:none; border:none; color:#fff;
+    font-size:0.9rem; cursor:pointer; opacity:0.85; padding:2px 4px; display:none;
+  }
+  .nav-banner-close:active{transform:translateY(1px);}
   .map-search-row{display:flex; align-items:center; gap:6px;}
   .search-input{flex:1; background:rgba(255,255,255,0.92); border:none; border-radius:10px; padding:8px 10px; font-size:0.8rem; color:#333; font-family:inherit;}
   .quick-toggle-btn{
@@ -248,7 +253,7 @@
         <div class="dest-pin" id="destPin"></div>
         <div class="car-dot" id="mapCarDot">🚗</div>
       </div>
-      <div class="map-search-panel">
+      <div class="map-search-panel" id="mapSearchPanel">
         <div class="map-search-row">
           <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search here...">
           <button class="quick-toggle-btn" id="quickToggleBtn">▲</button>
@@ -256,9 +261,11 @@
         <div class="quick-places" id="quickPlaces"></div>
         <div class="no-results" id="noResultsMsg">No results</div>
       </div>
-      <div class="nav-banner" id="navBanner">
+      <div class="nav-direction-panel" id="navDirectionPanel">
         <button class="nav-banner-close" id="navBannerClose" title="Stop trip">✖</button>
         <div class="nav-hint" id="navHint"></div>
+      </div>
+      <div class="nav-banner" id="navBanner">
         <div class="trip-info" id="tripInfo">
           <span class="trip-time" id="tripTime"></span>
           <span class="trip-dot">·</span>
@@ -412,8 +419,9 @@ function resetAppStates(){
   document.getElementById("teamsActive").style.display = "none";
 
   clearTimeout(rerouteTimeout);
+  clearTimeout(arrivalTimeout);
   document.getElementById("navBanner").style.display = "none";
-  document.getElementById("navBanner").classList.remove("rerouting");
+  hideDirectionPanel();
   navTrafficKey = null;
   document.querySelectorAll(".car-dot").forEach(dot => {
     dot.style.left = "20%";
@@ -458,6 +466,8 @@ function goToDestination(left, top, label){
   navigationActive = true;
   updateDriveControlsVisibility();
 
+  clearTimeout(arrivalTimeout);
+  showDirectionPanel();
   document.getElementById("navBanner").style.display = "block";
   updateNavBanner();
 }
@@ -467,6 +477,7 @@ let navigationActive = false;
 let navDestination = null;
 let navTrafficKey = null;
 let rerouteTimeout = null;
+let arrivalTimeout = null;
 const DRIVE_STEP = 4;
 const ARRIVE_DISTANCE = 6;
 const MILES_PER_PERCENT = 0.05; // fake scale from map-percent distance to miles
@@ -480,15 +491,26 @@ function updateDriveControlsVisibility(){
   document.getElementById("driveControls").classList.toggle("visible", navigationActive);
   document.getElementById("navBannerClose").style.display = navigationActive ? "block" : "none";
 }
+// While on a trip, the search bar is replaced up top with the turn-by-turn direction.
+function showDirectionPanel(){
+  document.getElementById("mapSearchPanel").style.display = "none";
+  document.getElementById("navDirectionPanel").style.display = "block";
+}
+function hideDirectionPanel(){
+  document.getElementById("mapSearchPanel").style.display = "";
+  document.getElementById("navDirectionPanel").style.display = "none";
+  document.getElementById("navDirectionPanel").classList.remove("rerouting");
+}
 function stopTrip(){
   tone(300, 0, 0.15, "sine", 0.12);
   clearTimeout(rerouteTimeout);
+  clearTimeout(arrivalTimeout);
   navDestination = null;
   navTrafficKey = null;
   navigationActive = false;
   updateDriveControlsVisibility();
+  hideDirectionPanel();
   document.getElementById("navBanner").style.display = "none";
-  document.getElementById("navBanner").classList.remove("rerouting");
   document.getElementById("destPin").style.display = "none";
 }
 document.getElementById("navBannerClose").addEventListener("click", stopTrip);
@@ -534,21 +556,23 @@ function updateTripInfo(distancePercent){
 }
 function updateNavBanner(){
   if (!navDestination) return;
-  const banner = document.getElementById("navBanner");
+  const directionPanel = document.getElementById("navDirectionPanel");
   const hint = document.getElementById("navHint");
   const pos = carPosition();
   clearTimeout(rerouteTimeout);
-  banner.classList.remove("rerouting");
+  directionPanel.classList.remove("rerouting");
 
   const distancePercent = distanceToDestination(pos);
   if (distancePercent <= ARRIVE_DISTANCE){
     tone(880, 0, 0.12, "sine", 0.15);
     tone(1046, 0.12, 0.18, "sine", 0.15);
     hint.textContent = `You're at ${navDestination.label}! 🎉`;
-    document.getElementById("tripInfo").style.display = "none";
+    document.getElementById("navBanner").style.display = "none";
     navDestination = null;
     navigationActive = false;
     updateDriveControlsVisibility();
+    clearTimeout(arrivalTimeout);
+    arrivalTimeout = setTimeout(hideDirectionPanel, 2000);
   } else {
     hint.textContent = `🧭 Navigating to ${navDestination.label}... head ${directionHint(pos)}!`;
     updateTripInfo(distancePercent);
@@ -569,8 +593,7 @@ function moveCar(dx, dy){
   if (distanceToDestination(carPosition()) >= distBefore){
     tone(220, 0, 0.2, "sawtooth", 0.1);
     navTrafficKey = pickRandomTraffic();
-    const banner = document.getElementById("navBanner");
-    banner.classList.add("rerouting");
+    document.getElementById("navDirectionPanel").classList.add("rerouting");
     document.getElementById("navHint").textContent = "🔄 Rerouting... that was the wrong way!";
     document.getElementById("tripInfo").style.display = "none";
     clearTimeout(rerouteTimeout);
