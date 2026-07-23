@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Oliver's Auto</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%97%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --p1:#ff5fa2; --p2:#ffd23f; --p3:#3fd0ff; --p4:#8a5cff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"Comic Sans MS","Trebuchet MS",system-ui,sans-serif;
+    min-height:100vh;
+    color:#38314f;
+    text-align:center;
+    background:linear-gradient(120deg,var(--p4),var(--p1),var(--p2),var(--p3));
+    background-size:400% 400%;
+    animation:flow 16s ease infinite;
+    padding:24px 14px 50px;
+    overflow-x:hidden;
+  }
+  @keyframes flow{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+
+  h1{
+    font-size:clamp(1.9rem,8vw,2.8rem);
+    color:#fff;
+    text-shadow:3px 3px 0 rgba(0,0,0,0.15);
+    animation:pop 2.5s ease-in-out infinite;
+  }
+  @keyframes pop{0%,100%{transform:scale(1) rotate(-1deg);}50%{transform:scale(1.04) rotate(1deg);}}
+  .sub{font-size:clamp(0.95rem,3.5vw,1.15rem); color:#fff; margin:4px 0 22px; text-shadow:1px 1px 0 rgba(0,0,0,0.12);}
+
+  /* ---- car screen bezel ---- */
+  .dashboard{
+    max-width:600px; margin:0 auto; aspect-ratio:16/9;
+    background:#111827; border-radius:26px; border:10px solid #2a2a35;
+    box-shadow:0 10px 0 rgba(0,0,0,0.25), 0 0 0 3px rgba(255,255,255,0.15);
+    position:relative; overflow:hidden;
+  }
+  .statusbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 12px; color:#e5e7eb; font-size:0.8rem; font-weight:bold;
+  }
+  .backbtn{background:none; border:none; color:#e5e7eb; font-size:1.3rem; cursor:pointer; visibility:hidden; padding:0 4px;}
+  .statusicons{font-size:0.85rem;}
+
+  .car-screen{display:none; position:relative; height:calc(100% - 30px);}
+  .car-screen.active{display:block;}
+
+  /* ---- home ---- */
+  .app-grid{display:flex; flex-wrap:wrap; gap:18px; justify-content:center; align-items:center; height:100%; padding:10px;}
+  .car-app{display:flex; flex-direction:column; align-items:center; gap:5px; background:none; border:none; cursor:pointer;}
+  .car-icon{
+    width:58px; height:58px; border-radius:15px; display:flex; align-items:center; justify-content:center;
+    font-size:1.7rem; box-shadow:0 4px 0 rgba(0,0,0,0.3); transition:transform .08s ease;
+  }
+  .car-app:active .car-icon{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
+  .car-label{font-size:0.7rem; color:#e5e7eb; font-weight:bold;}
+  .car-icon.maps{background:#137333;}
+  .car-icon.spotify{background:#1db954;}
+  .car-icon.teams{background:#5b5fc7;}
+  .car-icon.pocketcasts{background:#f43e37;}
+  .car-icon.multiscreen{background:#374151;}
+
+  /* ---- maps ---- */
+  .map-bg{position:absolute; inset:0; background:#dbe9d8; overflow:hidden;}
+  .road{position:absolute; left:8%; top:0; width:16%; height:100%; background:#4a4a55; transform:skewX(-10deg);}
+  .road::after{content:""; position:absolute; left:50%; top:0; width:2px; height:100%; background:repeating-linear-gradient(#fff 0 10px, transparent 10px 20px); transform:translateX(-50%);}
+  .car-dot{position:absolute; left:20%; top:75%; font-size:1.5rem; transition:left 2s ease, top 2s ease; z-index:2;}
+  .car-dot.driving{left:76%; top:20%;}
+  .home-pin{position:absolute; left:78%; top:14%; font-size:1.7rem; z-index:1;}
+  .map-topbar{position:absolute; top:8px; left:8px; right:8px; display:flex; gap:6px; z-index:3;}
+  .search-bar{flex:1; background:rgba(255,255,255,0.92); border-radius:999px; padding:7px 12px; font-size:0.8rem; color:#333; text-align:left;}
+  .home-shortcut{background:#fff; border:none; border-radius:999px; padding:7px 12px; font-weight:bold; font-size:0.8rem; color:#1a73e8; cursor:pointer; font-family:inherit;}
+  .home-shortcut:active{transform:translateY(1px);}
+  .nav-banner{
+    position:absolute; bottom:8px; left:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff;
+    padding:8px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
+  }
+
+  /* ---- spotify / pocket casts player ---- */
+  .player-card{display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#e5e7eb; gap:8px; padding:10px;}
+  .album-art{
+    width:90px; height:90px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+    font-size:2.2rem; box-shadow:0 6px 10px rgba(0,0,0,0.3);
+    background:linear-gradient(135deg,#1db954,#0e8a3e);
+  }
+  .album-art.pc{background:linear-gradient(135deg,#f43e37,#b8231e);}
+  .album-art.spinning{animation:spin 3s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  .song-title{font-weight:bold; font-size:1rem;}
+  .song-artist{font-size:0.8rem; opacity:0.8;}
+  .progress-bar{width:75%; max-width:200px; height:6px; background:rgba(255,255,255,0.2); border-radius:3px; overflow:hidden;}
+  .progress-fill{height:100%; width:35%; background:#e5e7eb; border-radius:3px;}
+  .player-controls{display:flex; gap:16px; margin-top:4px;}
+  .player-controls button{background:none; border:none; font-size:1.5rem; color:#e5e7eb; cursor:pointer;}
+
+  .waveform{display:flex; gap:4px; align-items:flex-end; height:22px;}
+  .waveform span{width:4px; background:#e5e7eb; height:6px; border-radius:2px; display:block;}
+  .waveform.playing span{animation:bounce 0.6s ease-in-out infinite alternate;}
+  .waveform.playing span:nth-child(2){animation-delay:0.1s;}
+  .waveform.playing span:nth-child(3){animation-delay:0.2s;}
+  .waveform.playing span:nth-child(4){animation-delay:0.3s;}
+  .waveform.playing span:nth-child(5){animation-delay:0.15s;}
+  @keyframes bounce{from{height:6px;}to{height:20px;}}
+
+  /* ---- teams ---- */
+  .teams-idle,.teams-incoming,.teams-active{
+    display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; color:#e5e7eb;
+  }
+  .teams-idle{display:flex;}
+  .teams-icon{font-size:2.2rem;}
+  .caller-name{font-weight:bold; font-size:1rem;}
+  .call-actions{display:flex; gap:24px;}
+  .call-btn{width:50px; height:50px; border-radius:50%; border:none; font-size:1.3rem; cursor:pointer; color:#fff;}
+  .call-btn.answer{background:#22c55e;}
+  .call-btn.decline{background:#ef4444;}
+  .call-btn.leave{background:#ef4444; width:auto; border-radius:999px; padding:0 18px; font-size:0.9rem; font-weight:bold; height:40px;}
+  .call-timer{font-size:1.2rem; font-weight:bold;}
+  #simulateCallBtn{background:#fff; color:#111827; border:none; border-radius:999px; padding:9px 16px; font-weight:bold; cursor:pointer; font-family:inherit;}
+
+  /* ---- multi-screen ---- */
+  .split{display:flex; height:100%; gap:6px; padding:6px;}
+  .split-panel{flex:1; background:#1f2937; border-radius:10px; position:relative; overflow:hidden; display:flex; flex-direction:column;}
+  .split-panel.left .map-bg{position:absolute; inset:0;}
+  .map-topbar.small{position:absolute; top:6px; left:6px; right:6px; display:flex; gap:5px; z-index:3;}
+  .search-bar.small{font-size:0.65rem; padding:5px 8px;}
+  .home-shortcut.small{font-size:0.65rem; padding:5px 8px;}
+  .split-tabs{display:flex; justify-content:center; gap:6px; padding:6px;}
+  .split-tab{background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:5px 9px; font-size:0.95rem; cursor:pointer;}
+  .split-tab.selected{background:#fff;}
+  .mini-player{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:#e5e7eb;}
+  .mini-album{font-size:1.5rem;}
+  .mini-title{font-size:0.7rem; text-align:center; padding:0 8px;}
+  .mini-play{background:none; border:none; font-size:1.1rem; color:#e5e7eb; cursor:pointer;}
+
+  footer{margin-top:22px; font-size:0.8rem; color:#fff; opacity:0.85; text-shadow:1px 1px 0 rgba(0,0,0,0.1);}
+</style>
+</head>
+<body>
+  <h1>🚗 Oliver's Auto</h1>
+  <p class="sub">Tap an app, or try Multi-Screen!</p>
+
+  <div class="dashboard">
+    <div class="statusbar">
+      <button class="backbtn" id="backBtn">←</button>
+      <div id="clock">10:32</div>
+      <div class="statusicons">📶 🔋</div>
+    </div>
+
+    <!-- ==== HOME ==== -->
+    <div class="car-screen active" id="screen-home">
+      <div class="app-grid">
+        <button class="car-app" data-screen="maps">
+          <div class="car-icon maps">📍</div>
+          <div class="car-label">Maps</div>
+        </button>
+        <button class="car-app" data-screen="spotify">
+          <div class="car-icon spotify">🎵</div>
+          <div class="car-label">Spotify</div>
+        </button>
+        <button class="car-app" data-screen="teams">
+          <div class="car-icon teams">👥</div>
+          <div class="car-label">Teams</div>
+        </button>
+        <button class="car-app" data-screen="pocketcasts">
+          <div class="car-icon pocketcasts">🎧</div>
+          <div class="car-label">Pocket Casts</div>
+        </button>
+        <button class="car-app" data-screen="multiscreen">
+          <div class="car-icon multiscreen">⧉</div>
+          <div class="car-label">Multi-Screen</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==== MAPS ==== -->
+    <div class="car-screen" id="screen-maps">
+      <div class="map-bg">
+        <div class="road"></div>
+        <div class="home-pin">🏠</div>
+        <div class="car-dot" id="mapCarDot">🚗</div>
+      </div>
+      <div class="map-topbar">
+        <div class="search-bar">🔍 Search here</div>
+        <button class="home-shortcut" id="homeShortcutBtn">🏠 Home</button>
+      </div>
+      <div class="nav-banner" id="navBanner"></div>
+    </div>
+
+    <!-- ==== SPOTIFY ==== -->
+    <div class="car-screen" id="screen-spotify">
+      <div class="player-card">
+        <div class="album-art" id="albumArt">🎵</div>
+        <div class="song-title">Sunshine Groove</div>
+        <div class="song-artist">The Backseat Band</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="player-controls">
+          <button id="spotifyPrev">⏮</button>
+          <button id="spotifyPlay">▶️</button>
+          <button id="spotifyNext">⏭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==== TEAMS ==== -->
+    <div class="car-screen" id="screen-teams">
+      <div class="teams-idle" id="teamsIdle">
+        <div class="teams-icon">👥</div>
+        <div>No active calls</div>
+        <button id="simulateCallBtn">📞 Simulate Call</button>
+      </div>
+      <div class="teams-incoming" id="teamsIncoming">
+        <div class="teams-icon">👥</div>
+        <div class="caller-name">Team Meeting</div>
+        <div class="call-actions">
+          <button class="call-btn decline" id="declineBtn">✖</button>
+          <button class="call-btn answer" id="answerBtn">📞</button>
+        </div>
+      </div>
+      <div class="teams-active" id="teamsActive">
+        <div class="teams-icon">👥</div>
+        <div class="caller-name">Team Meeting</div>
+        <div class="call-timer" id="callTimer">00:00</div>
+        <button class="call-btn leave" id="leaveBtn">✖ Leave</button>
+      </div>
+    </div>
+
+    <!-- ==== POCKET CASTS ==== -->
+    <div class="car-screen" id="screen-pocketcasts">
+      <div class="player-card">
+        <div class="album-art pc" id="pcArt">🎧</div>
+        <div class="song-title">Mystery Explorers</div>
+        <div class="song-artist">Ep. 42: The Hidden Cave</div>
+        <div class="waveform" id="pcWaveform"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="player-controls">
+          <button id="pcBack">⏪15</button>
+          <button id="pcPlay">▶️</button>
+          <button id="pcFwd">30⏩</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==== MULTI-SCREEN ==== -->
+    <div class="car-screen" id="screen-multiscreen">
+      <div class="split">
+        <div class="split-panel left">
+          <div class="map-bg">
+            <div class="road"></div>
+          </div>
+          <div class="map-topbar small">
+            <div class="search-bar small">🔍 Search</div>
+            <button class="home-shortcut small" id="msHomeBtn">🏠 Home</button>
+          </div>
+        </div>
+        <div class="split-panel right">
+          <div class="split-tabs">
+            <button class="split-tab selected" data-app="spotify">🎵</button>
+            <button class="split-tab" data-app="teams">👥</button>
+            <button class="split-tab" data-app="pocketcasts">🎧</button>
+          </div>
+          <div class="mini-player" id="miniPlayer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Made for Oliver 🚗</footer>
+
+<script>
+// ---------- clock ----------
+function updateClock(){
+  const now = new Date();
+  document.getElementById("clock").textContent = now.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ---------- audio ----------
+let audioCtx;
+function ctx(){
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function tone(freq, start, dur, type, gainMax){
+  const c = ctx();
+  const osc = c.createOscillator();
+  const gain = c.createGain();
+  osc.type = type || "sine";
+  osc.frequency.setValueAtTime(freq, c.currentTime + start);
+  gain.gain.setValueAtTime(0, c.currentTime + start);
+  gain.gain.linearRampToValueAtTime(gainMax || 0.15, c.currentTime + start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+  osc.connect(gain).connect(c.destination);
+  osc.start(c.currentTime + start);
+  osc.stop(c.currentTime + start + dur + 0.05);
+}
+
+// ---------- navigation ----------
+const backBtn = document.getElementById("backBtn");
+let ringInterval = null, callTimerInterval = null, spotifyInterval = null;
+let spotifyPlaying = false, pcPlaying = false, callSeconds = 0;
+
+function resetAppStates(){
+  clearInterval(ringInterval); ringInterval = null;
+  clearInterval(callTimerInterval); callTimerInterval = null;
+  clearInterval(spotifyInterval); spotifyInterval = null;
+
+  spotifyPlaying = false;
+  document.getElementById("spotifyPlay").textContent = "▶️";
+  document.getElementById("albumArt").classList.remove("spinning");
+
+  pcPlaying = false;
+  document.getElementById("pcPlay").textContent = "▶️";
+  document.getElementById("pcWaveform").classList.remove("playing");
+
+  callSeconds = 0;
+  document.getElementById("callTimer").textContent = "00:00";
+  document.getElementById("teamsIdle").style.display = "flex";
+  document.getElementById("teamsIncoming").style.display = "none";
+  document.getElementById("teamsActive").style.display = "none";
+
+  document.getElementById("navBanner").style.display = "none";
+  document.getElementById("mapCarDot").classList.remove("driving");
+}
+
+function showCarScreen(id){
+  resetAppStates();
+  document.querySelectorAll(".car-screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + id).classList.add("active");
+  backBtn.style.visibility = id === "home" ? "hidden" : "visible";
+}
+document.querySelectorAll(".car-app").forEach(b => b.addEventListener("click", () => showCarScreen(b.dataset.screen)));
+backBtn.addEventListener("click", () => showCarScreen("home"));
+
+// ---------- maps ----------
+function goHome(carDotId, bannerId){
+  const dot = document.getElementById(carDotId);
+  const banner = document.getElementById(bannerId);
+  tone(880, 0, 0.1, "sine", 0.15);
+  tone(660, 0.08, 0.15, "sine", 0.12);
+  dot.classList.add("driving");
+  banner.textContent = "Navigating home... 12 min";
+  banner.style.display = "block";
+  setTimeout(() => { banner.textContent = "You're home! 🎉"; }, 2000);
+}
+document.getElementById("homeShortcutBtn").addEventListener("click", () => goHome("mapCarDot", "navBanner"));
+document.getElementById("msHomeBtn").addEventListener("click", () => {
+  tone(880, 0, 0.1, "sine", 0.15);
+  tone(660, 0.08, 0.15, "sine", 0.12);
+});
+
+// ---------- spotify ----------
+const SPOTIFY_NOTES = [392.00, 440.00, 523.25, 440.00];
+document.getElementById("spotifyPlay").addEventListener("click", () => {
+  spotifyPlaying = !spotifyPlaying;
+  const btn = document.getElementById("spotifyPlay");
+  const art = document.getElementById("albumArt");
+  if (spotifyPlaying){
+    btn.textContent = "⏸";
+    art.classList.add("spinning");
+    let i = 0;
+    spotifyInterval = setInterval(() => {
+      tone(SPOTIFY_NOTES[i % SPOTIFY_NOTES.length], 0, 0.35, "sine", 0.1);
+      i++;
+    }, 450);
+  } else {
+    btn.textContent = "▶️";
+    art.classList.remove("spinning");
+    clearInterval(spotifyInterval);
+  }
+});
+document.getElementById("spotifyPrev").addEventListener("click", () => tone(330, 0, 0.1, "triangle", 0.1));
+document.getElementById("spotifyNext").addEventListener("click", () => tone(550, 0, 0.1, "triangle", 0.1));
+
+// ---------- pocket casts ----------
+document.getElementById("pcPlay").addEventListener("click", () => {
+  pcPlaying = !pcPlaying;
+  document.getElementById("pcPlay").textContent = pcPlaying ? "⏸" : "▶️";
+  document.getElementById("pcWaveform").classList.toggle("playing", pcPlaying);
+});
+document.getElementById("pcBack").addEventListener("click", () => tone(300, 0, 0.1, "triangle", 0.1));
+document.getElementById("pcFwd").addEventListener("click", () => tone(500, 0, 0.1, "triangle", 0.1));
+
+// ---------- teams ----------
+function formatTime(s){
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+}
+document.getElementById("simulateCallBtn").addEventListener("click", () => {
+  document.getElementById("teamsIdle").style.display = "none";
+  document.getElementById("teamsIncoming").style.display = "flex";
+  ringInterval = setInterval(() => {
+    tone(600, 0, 0.15, "sine", 0.15);
+    tone(500, 0.15, 0.15, "sine", 0.12);
+  }, 1200);
+});
+document.getElementById("answerBtn").addEventListener("click", () => {
+  clearInterval(ringInterval); ringInterval = null;
+  document.getElementById("teamsIncoming").style.display = "none";
+  document.getElementById("teamsActive").style.display = "flex";
+  callSeconds = 0;
+  callTimerInterval = setInterval(() => {
+    callSeconds++;
+    document.getElementById("callTimer").textContent = formatTime(callSeconds);
+  }, 1000);
+});
+document.getElementById("declineBtn").addEventListener("click", () => {
+  clearInterval(ringInterval); ringInterval = null;
+  document.getElementById("teamsIncoming").style.display = "none";
+  document.getElementById("teamsIdle").style.display = "flex";
+});
+document.getElementById("leaveBtn").addEventListener("click", () => {
+  clearInterval(callTimerInterval); callTimerInterval = null;
+  document.getElementById("teamsActive").style.display = "none";
+  document.getElementById("teamsIdle").style.display = "flex";
+  document.getElementById("callTimer").textContent = "00:00";
+});
+
+// ---------- multi-screen ----------
+function renderMiniPlayer(app){
+  const el = document.getElementById("miniPlayer");
+  if (app === "spotify"){
+    el.innerHTML = `<div class="mini-album">🎵</div><div class="mini-title">Sunshine Groove</div><button class="mini-play" id="miniPlayBtn">▶️</button>`;
+  } else if (app === "teams"){
+    el.innerHTML = `<div class="mini-album">👥</div><div class="mini-title">No active calls</div>`;
+  } else {
+    el.innerHTML = `<div class="mini-album">🎧</div><div class="mini-title">Mystery Explorers</div><button class="mini-play" id="miniPlayBtn">▶️</button>`;
+  }
+  const playBtn = document.getElementById("miniPlayBtn");
+  if (playBtn){
+    playBtn.addEventListener("click", () => {
+      playBtn.textContent = playBtn.textContent === "▶️" ? "⏸" : "▶️";
+    });
+  }
+}
+document.querySelectorAll(".split-tab").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".split-tab").forEach(x => x.classList.toggle("selected", x === t));
+    renderMiniPlayer(t.dataset.app);
+  });
+});
+renderMiniPlayer("spotify");
+</script>
+</body>
+</html>
