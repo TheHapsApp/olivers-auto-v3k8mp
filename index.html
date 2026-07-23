@@ -223,13 +223,7 @@
           <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search here...">
           <button class="quick-toggle-btn" id="quickToggleBtn">▲</button>
         </div>
-        <div class="quick-places" id="quickPlaces">
-          <button class="category-btn" data-cat="home">🏠<span>Home</span></button>
-          <button class="category-btn" data-cat="food">🍔<span>Food</span></button>
-          <button class="category-btn" data-cat="gas">⛽<span>Gas</span></button>
-          <button class="category-btn" data-cat="coffee">☕<span>Coffee</span></button>
-          <button class="category-btn" data-cat="parking">🅿️<span>Parking</span></button>
-        </div>
+        <div class="quick-places" id="quickPlaces"></div>
         <div class="no-results" id="noResultsMsg">No results</div>
       </div>
       <div class="nav-banner" id="navBanner"></div>
@@ -374,10 +368,8 @@ function resetAppStates(){
   });
   document.getElementById("destPin").style.display = "none";
   document.getElementById("searchInput").value = "";
-  document.querySelectorAll(".category-btn").forEach(b => b.style.display = "");
-  document.getElementById("noResultsMsg").style.display = "none";
   quickPlacesCollapsed = false;
-  updateQuickPlacesVisibility();
+  renderQuickPlaces("");
 }
 
 function showCarScreen(id){
@@ -415,14 +407,31 @@ document.getElementById("msSearchBtn").addEventListener("click", () => {
   document.getElementById("searchInput").focus();
 });
 
-// Quick places (under the search bar) show only when at least one is visible;
-// the toggle arrow only appears when there's something for it to collapse.
+// "Places you've been lately" — persists for the session, most recent first.
+let recentPlaceIds = [];
+function recordRecentPlace(catId){
+  recentPlaceIds = [catId, ...recentPlaceIds.filter(id => id !== catId)];
+}
+
+// Quick places shows search matches while typing, or your recent places when
+// the search bar is empty. The toggle arrow only appears when there's
+// actually something to show — no recent places yet means no arrow.
 let quickPlacesCollapsed = false;
-function updateQuickPlacesVisibility(){
-  const anyVisible = [...document.querySelectorAll(".category-btn")].some(b => b.style.display !== "none");
+function renderQuickPlaces(query){
   const quickPlaces = document.getElementById("quickPlaces");
   const toggleBtn = document.getElementById("quickToggleBtn");
-  if (!anyVisible){
+  const ids = query
+    ? Object.keys(CATEGORIES).filter(id => CATEGORIES[id].label.toLowerCase().includes(query))
+    : recentPlaceIds;
+
+  quickPlaces.innerHTML = ids.map(id => {
+    const cat = CATEGORIES[id];
+    return `<button class="category-btn" data-cat="${id}">${cat.emoji}<span>${cat.label}</span></button>`;
+  }).join("");
+
+  document.getElementById("noResultsMsg").style.display = (query && ids.length === 0) ? "block" : "none";
+
+  if (ids.length === 0){
     quickPlaces.style.display = "none";
     toggleBtn.style.display = "none";
   } else {
@@ -433,34 +442,31 @@ function updateQuickPlacesVisibility(){
 }
 document.getElementById("quickToggleBtn").addEventListener("click", () => {
   quickPlacesCollapsed = !quickPlacesCollapsed;
-  updateQuickPlacesVisibility();
+  renderQuickPlaces(document.getElementById("searchInput").value.trim().toLowerCase());
 });
 document.getElementById("searchInput").addEventListener("input", (e) => {
-  const q = e.target.value.trim().toLowerCase();
-  let anyVisible = false;
-  document.querySelectorAll(".category-btn").forEach(btn => {
-    const match = CATEGORIES[btn.dataset.cat].label.toLowerCase().includes(q);
-    btn.style.display = match ? "" : "none";
-    if (match) anyVisible = true;
-  });
-  document.getElementById("noResultsMsg").style.display = (q && !anyVisible) ? "block" : "none";
-  updateQuickPlacesVisibility();
+  renderQuickPlaces(e.target.value.trim().toLowerCase());
 });
-document.querySelectorAll(".category-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const cat = CATEGORIES[btn.dataset.cat];
-    const destPin = document.getElementById("destPin");
-    if (btn.dataset.cat === "home"){
-      destPin.style.display = "none";
-    } else {
-      destPin.textContent = cat.emoji;
-      destPin.style.left = cat.left;
-      destPin.style.top = cat.top;
-      destPin.style.display = "block";
-    }
-    goToDestination(document.getElementById("navBanner"), cat.left, cat.top, cat.label, cat.minutes);
-  });
+document.getElementById("quickPlaces").addEventListener("click", (e) => {
+  const btn = e.target.closest(".category-btn");
+  if (btn) goToPlace(btn.dataset.cat);
 });
+
+function goToPlace(catId){
+  const cat = CATEGORIES[catId];
+  const destPin = document.getElementById("destPin");
+  if (catId === "home"){
+    destPin.style.display = "none";
+  } else {
+    destPin.textContent = cat.emoji;
+    destPin.style.left = cat.left;
+    destPin.style.top = cat.top;
+    destPin.style.display = "block";
+  }
+  goToDestination(document.getElementById("navBanner"), cat.left, cat.top, cat.label, cat.minutes);
+  recordRecentPlace(catId);
+  renderQuickPlaces(document.getElementById("searchInput").value.trim().toLowerCase());
+}
 
 // ---------- spotify ----------
 const SPOTIFY_NOTES = [392.00, 440.00, 523.25, 440.00];
@@ -572,15 +578,15 @@ const VOICE_COMMANDS = [
   { match:["open maps", "show maps"], reply:"Opening Maps!",
     action: () => showCarScreen("maps") },
   { match:["navigate home", "take me home", "drive home"], reply:"Navigating home!",
-    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="home"]').click(); } },
+    action: () => { showCarScreen("maps"); goToPlace("home"); } },
   { match:["find food", "i'm hungry", "hungry", "food"], reply:"Finding food nearby!",
-    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="food"]').click(); } },
+    action: () => { showCarScreen("maps"); goToPlace("food"); } },
   { match:["find gas", "need gas", "gas"], reply:"Finding gas nearby!",
-    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="gas"]').click(); } },
+    action: () => { showCarScreen("maps"); goToPlace("gas"); } },
   { match:["find coffee", "need coffee", "coffee"], reply:"Finding coffee nearby!",
-    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="coffee"]').click(); } },
+    action: () => { showCarScreen("maps"); goToPlace("coffee"); } },
   { match:["find parking", "parking"], reply:"Finding parking nearby!",
-    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="parking"]').click(); } },
+    action: () => { showCarScreen("maps"); goToPlace("parking"); } },
   { match:["play music", "play song", "open spotify"], reply:"Playing some music!",
     action: () => { showCarScreen("spotify"); if (!spotifyPlaying) document.getElementById("spotifyPlay").click(); } },
   { match:["pause music", "stop music", "pause"], reply:"Music paused!",
