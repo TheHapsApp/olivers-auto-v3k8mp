@@ -86,9 +86,14 @@
   .dest-pin{position:absolute; font-size:1.6rem; z-index:1; display:none;}
   .nav-banner{
     position:absolute; bottom:8px; left:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff;
-    padding:8px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
+    padding:8px 26px; border-radius:10px; text-align:center; font-size:0.8rem; z-index:3; display:none;
   }
   .nav-banner.rerouting{background:rgba(217,101,50,0.92);}
+  .nav-banner-close{
+    position:absolute; top:4px; right:6px; background:none; border:none; color:#fff;
+    font-size:0.9rem; cursor:pointer; opacity:0.85; padding:2px 4px; display:none;
+  }
+  .nav-banner-close:active{transform:translateY(1px);}
   .trip-info{display:flex; justify-content:center; align-items:baseline; gap:6px; font-size:0.78rem; margin-top:4px; opacity:0.95;}
   .trip-time{font-weight:bold; font-size:0.9rem;}
   .trip-dot{opacity:0.6;}
@@ -252,6 +257,7 @@
         <div class="no-results" id="noResultsMsg">No results</div>
       </div>
       <div class="nav-banner" id="navBanner">
+        <button class="nav-banner-close" id="navBannerClose" title="Stop trip">✖</button>
         <div class="nav-hint" id="navHint"></div>
         <div class="trip-info" id="tripInfo">
           <span class="trip-time" id="tripTime"></span>
@@ -472,7 +478,20 @@ const TRAFFIC_LEVELS = {
 
 function updateDriveControlsVisibility(){
   document.getElementById("driveControls").classList.toggle("visible", navigationActive);
+  document.getElementById("navBannerClose").style.display = navigationActive ? "block" : "none";
 }
+function stopTrip(){
+  tone(300, 0, 0.15, "sine", 0.12);
+  clearTimeout(rerouteTimeout);
+  navDestination = null;
+  navTrafficKey = null;
+  navigationActive = false;
+  updateDriveControlsVisibility();
+  document.getElementById("navBanner").style.display = "none";
+  document.getElementById("navBanner").classList.remove("rerouting");
+  document.getElementById("destPin").style.display = "none";
+}
+document.getElementById("navBannerClose").addEventListener("click", stopTrip);
 function carPosition(){
   const dot = document.getElementById("mapCarDot");
   return { left: parseFloat(dot.style.left), top: parseFloat(dot.style.top) };
