@@ -94,6 +94,25 @@
   .trip-exit-btn{background:none; border:none; color:#fff; cursor:pointer; font-size:0.8rem; opacity:0.85; padding:0 2px; line-height:1;}
   .trip-exit-btn:active{transform:translateY(1px);}
   .mini-trip-info .trip-exit-btn{font-size:0.6rem;}
+  .trip-actions{display:flex; justify-content:center; align-items:center; gap:10px; margin-top:6px;}
+  .trip-action-btn{
+    background:rgba(255,255,255,0.15); border:none; border-radius:50%; width:26px; height:26px;
+    color:#fff; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .trip-action-btn.trip-exit-btn{background:rgba(255,255,255,0.15); opacity:1; font-size:0.75rem;}
+  .trip-action-btn:active{transform:translateY(1px);}
+  .trip-more-wrap{position:relative;}
+  .trip-more-menu{
+    position:absolute; bottom:100%; right:0; margin-bottom:8px; background:rgba(17,24,39,0.97);
+    border-radius:10px; padding:6px; z-index:6; display:none; flex-direction:column; gap:2px;
+    white-space:nowrap;
+  }
+  .trip-more-menu.open{display:flex;}
+  .trip-more-item{
+    background:none; border:none; color:#fff; text-align:left; font-size:0.72rem;
+    padding:6px 10px; cursor:pointer; border-radius:6px;
+  }
+  .trip-more-item:active{background:rgba(255,255,255,0.12);}
   .map-search-panel{
     position:absolute; top:8px; left:8px; right:8px; background:rgba(17,24,39,0.95);
     border-radius:14px; padding:10px; z-index:4;
@@ -277,12 +296,24 @@
       </div>
       <div class="nav-banner" id="navBanner">
         <div class="trip-info" id="tripInfo">
-          <button class="trip-exit-btn" title="Stop trip">✖</button>
           <span class="trip-time" id="tripTime"></span>
           <span class="trip-dot">·</span>
           <span class="trip-distance" id="tripDistance"></span>
           <span class="trip-dot">·</span>
           <span class="trip-arrival" id="tripArrival"></span>
+        </div>
+        <div class="trip-actions" id="tripActions">
+          <button class="trip-action-btn trip-exit-btn" title="Exit trip">✖</button>
+          <button class="trip-action-btn" id="tripRoutesBtn" title="See routes">🗺️</button>
+          <button class="trip-action-btn" id="tripAddStopBtn" title="Add a stop">🔍</button>
+          <button class="trip-action-btn" id="tripDestInfoBtn" title="Where am I going?">📍</button>
+          <div class="trip-more-wrap">
+            <button class="trip-action-btn" id="tripMoreBtn" title="More">⋮</button>
+            <div class="trip-more-menu" id="tripMoreMenu">
+              <button class="trip-more-item" id="shareTripBtn">📤 Share trip progress</button>
+              <button class="trip-more-item" id="reportIncidentBtn">⚠️ Report incident</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -447,12 +478,15 @@ function resetAppStates(){
     hideDirectionPanel();
     navTrafficKey = null;
     navDestination = null;
+    navStopsQueue = [];
     document.querySelectorAll(".car-dot").forEach(dot => {
       dot.style.left = "20%";
       dot.style.top = "75%";
     });
     document.getElementById("destPin").style.display = "none";
   }
+  if (addingStop) closeAddStopPicker();
+  document.getElementById("tripMoreMenu").classList.remove("open");
   document.getElementById("searchInput").value = "";
   quickPlacesCollapsed = false;
   renderQuickPlaces("");
@@ -482,11 +516,11 @@ const CATEGORIES = {
 
 // You drive there yourself with the arrows — the car never auto-moves.
 // Google just tells you which way to go, and reroutes if you go the wrong way.
-function goToDestination(left, top, label){
+function goToDestination(left, top, label, catId){
   tone(880, 0, 0.1, "sine", 0.15);
   tone(660, 0.08, 0.15, "sine", 0.12);
 
-  navDestination = { left: parseFloat(left), top: parseFloat(top), label };
+  navDestination = { left: parseFloat(left), top: parseFloat(top), label, catId };
   navTrafficKey = pickRandomTraffic();
   navigationActive = true;
   updateDriveControlsVisibility();
@@ -500,9 +534,12 @@ function goToDestination(left, top, label){
 // ---------- drive controls (manual steering while navigating) ----------
 let navigationActive = false;
 let navDestination = null;
+let navStopsQueue = []; // stops inserted mid-trip via "Add a stop", visited before the original destination
 let navTrafficKey = null;
 let rerouteTimeout = null;
 let arrivalTimeout = null;
+let hintFlashTimeout = null;
+let addingStop = false;
 const DRIVE_STEP = 4;
 const ARRIVE_DISTANCE = 6;
 const MILES_PER_PERCENT = 0.05; // fake scale from map-percent distance to miles
@@ -528,12 +565,30 @@ function hideDirectionPanel(){
   document.getElementById("miniNavHint").style.display = "none";
   document.getElementById("msSearchBtn").style.display = "";
   document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.remove("rerouting"));
+  addingStop = false;
+  document.getElementById("tripMoreMenu").classList.remove("open");
+}
+// Points destPin at a category's spot on the map (or hides it for Home, which
+// already has its own permanent home-pin marker).
+function setDestPin(catId){
+  const destPin = document.getElementById("destPin");
+  if (catId === "home"){
+    destPin.style.display = "none";
+  } else {
+    const cat = CATEGORIES[catId];
+    destPin.textContent = cat.emoji;
+    destPin.style.left = cat.left;
+    destPin.style.top = cat.top;
+    destPin.style.display = "block";
+  }
 }
 function stopTrip(){
   tone(300, 0, 0.15, "sine", 0.12);
   clearTimeout(rerouteTimeout);
   clearTimeout(arrivalTimeout);
+  clearTimeout(hintFlashTimeout);
   navDestination = null;
+  navStopsQueue = [];
   navTrafficKey = null;
   navigationActive = false;
   updateDriveControlsVisibility();
@@ -588,17 +643,47 @@ function updateTripInfo(distancePercent){
   document.querySelectorAll(".trip-distance").forEach(el => el.textContent = distanceText);
   document.querySelectorAll(".trip-arrival").forEach(el => el.textContent = arrivalText);
 }
+// Shows a temporary message in place of the direction hint, then reverts.
+function flashHintMessage(text, ms){
+  clearTimeout(hintFlashTimeout);
+  document.querySelectorAll(".nav-hint").forEach(el => el.textContent = text);
+  hintFlashTimeout = setTimeout(updateNavBanner, ms || 2000);
+}
+// Simulates Google recalculating the route: re-rolls traffic, flashes a
+// message, then settles back into the normal direction/trip-info display.
+function triggerReroute(message){
+  tone(220, 0, 0.2, "sawtooth", 0.1);
+  navTrafficKey = pickRandomTraffic();
+  document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.add("rerouting"));
+  document.querySelectorAll(".nav-hint").forEach(el => el.textContent = message);
+  document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
+  clearTimeout(rerouteTimeout);
+  rerouteTimeout = setTimeout(updateNavBanner, 1500);
+}
 function updateNavBanner(){
   if (!navDestination) return;
   const pos = carPosition();
   clearTimeout(rerouteTimeout);
+  clearTimeout(hintFlashTimeout);
   document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.remove("rerouting"));
 
   const distancePercent = distanceToDestination(pos);
   if (distancePercent <= ARRIVE_DISTANCE){
     tone(880, 0, 0.12, "sine", 0.15);
     tone(1046, 0.12, 0.18, "sine", 0.15);
-    document.querySelectorAll(".nav-hint").forEach(el => el.textContent = `You're at ${navDestination.label}! 🎉`);
+    const arrivedLabel = navDestination.label;
+    if (navStopsQueue.length > 0){
+      navDestination = navStopsQueue.shift();
+      navTrafficKey = pickRandomTraffic();
+      setDestPin(navDestination.catId);
+      document.querySelectorAll(".nav-hint").forEach(el =>
+        el.textContent = `You're at ${arrivedLabel}! Continuing to ${navDestination.label}...`);
+      document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
+      clearTimeout(rerouteTimeout);
+      rerouteTimeout = setTimeout(updateNavBanner, 1500);
+      return;
+    }
+    document.querySelectorAll(".nav-hint").forEach(el => el.textContent = `You're at ${arrivedLabel}! 🎉`);
     document.getElementById("navBanner").style.display = "none";
     document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
     navDestination = null;
@@ -625,13 +710,7 @@ function moveCar(dx, dy){
 
   if (!navDestination) return;
   if (distanceToDestination(carPosition()) >= distBefore){
-    tone(220, 0, 0.2, "sawtooth", 0.1);
-    navTrafficKey = pickRandomTraffic();
-    document.querySelectorAll(".nav-direction-box").forEach(el => el.classList.add("rerouting"));
-    document.querySelectorAll(".nav-hint").forEach(el => el.textContent = "🔄 Rerouting... that was the wrong way!");
-    document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
-    clearTimeout(rerouteTimeout);
-    rerouteTimeout = setTimeout(updateNavBanner, 1500);
+    triggerReroute("🔄 Rerouting... that was the wrong way!");
   } else {
     updateNavBanner();
   }
@@ -694,24 +773,73 @@ document.getElementById("searchInput").addEventListener("input", (e) => {
 });
 document.getElementById("quickPlaces").addEventListener("click", (e) => {
   const btn = e.target.closest(".category-btn");
-  if (btn) goToPlace(btn.dataset.cat);
+  if (!btn) return;
+  if (addingStop) addStop(btn.dataset.cat);
+  else goToPlace(btn.dataset.cat);
 });
 
 function goToPlace(catId){
   const cat = CATEGORIES[catId];
-  const destPin = document.getElementById("destPin");
-  if (catId === "home"){
-    destPin.style.display = "none";
-  } else {
-    destPin.textContent = cat.emoji;
-    destPin.style.left = cat.left;
-    destPin.style.top = cat.top;
-    destPin.style.display = "block";
-  }
-  goToDestination(cat.left, cat.top, cat.label);
+  setDestPin(catId);
+  goToDestination(cat.left, cat.top, cat.label, catId);
   recordRecentPlace(catId);
   renderQuickPlaces(document.getElementById("searchInput").value.trim().toLowerCase());
 }
+
+// ---------- trip toolbar: routes / add-stop / destination-info / kebab menu ----------
+function openAddStopPicker(){
+  addingStop = true;
+  document.getElementById("navDirectionPanel").style.display = "none";
+  document.getElementById("mapSearchPanel").style.display = "block";
+  document.getElementById("searchInput").value = "";
+  quickPlacesCollapsed = false;
+  renderQuickPlaces("");
+  document.getElementById("searchInput").focus();
+}
+function closeAddStopPicker(){
+  addingStop = false;
+  document.getElementById("mapSearchPanel").style.display = "none";
+  document.getElementById("navDirectionPanel").style.display = "block";
+}
+document.getElementById("tripAddStopBtn").addEventListener("click", () => {
+  tone(700, 0, 0.08, "sine", 0.1);
+  if (addingStop) closeAddStopPicker();
+  else openAddStopPicker();
+});
+
+function addStop(catId){
+  const cat = CATEGORIES[catId];
+  navStopsQueue.unshift(navDestination); // resume the old destination right after this new stop
+  navDestination = { left: parseFloat(cat.left), top: parseFloat(cat.top), label: cat.label, catId };
+  navTrafficKey = pickRandomTraffic();
+  setDestPin(catId);
+  recordRecentPlace(catId);
+  tone(660, 0, 0.1, "sine", 0.15);
+  tone(880, 0.08, 0.15, "sine", 0.12);
+  closeAddStopPicker();
+  flashHintMessage(`➕ Added ${cat.label} as a stop!`, 1800);
+}
+
+document.getElementById("tripRoutesBtn").addEventListener("click", () => {
+  tone(700, 0, 0.08, "sine", 0.1);
+  flashHintMessage("🗺️ You're on the fastest route!", 2000);
+});
+document.getElementById("tripDestInfoBtn").addEventListener("click", () => {
+  tone(700, 0, 0.08, "sine", 0.1);
+  if (navDestination) flashHintMessage(`📍 Heading to ${navDestination.label}`, 2000);
+});
+document.getElementById("tripMoreBtn").addEventListener("click", () => {
+  tone(700, 0, 0.08, "sine", 0.1);
+  document.getElementById("tripMoreMenu").classList.toggle("open");
+});
+document.getElementById("shareTripBtn").addEventListener("click", () => {
+  document.getElementById("tripMoreMenu").classList.remove("open");
+  flashHintMessage("📤 Trip progress shared!", 2000);
+});
+document.getElementById("reportIncidentBtn").addEventListener("click", () => {
+  document.getElementById("tripMoreMenu").classList.remove("open");
+  triggerReroute("⚠️ Incident reported! Finding a new route...");
+});
 
 // ---------- spotify ----------
 const SPOTIFY_NOTES = [392.00, 440.00, 523.25, 440.00];
