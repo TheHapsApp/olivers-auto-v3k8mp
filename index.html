@@ -47,6 +47,17 @@
   }
   .backbtn{background:none; border:none; color:#e5e7eb; font-size:1.3rem; cursor:pointer; visibility:hidden; padding:0 4px;}
   .statusicons{font-size:0.85rem;}
+  .statusbar-right{display:flex; align-items:center; gap:10px;}
+  .mic-btn{background:none; border:none; color:#e5e7eb; font-size:1rem; cursor:pointer; padding:0 2px;}
+  .mic-btn.listening{animation:micPulse 0.8s ease-in-out infinite; color:#4285f4;}
+  @keyframes micPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
+
+  .assistant-banner{
+    position:absolute; bottom:8px; left:8px; right:8px;
+    background:linear-gradient(120deg,#4285f4,#9b72cb,#d96570); color:#fff;
+    padding:10px 12px; border-radius:12px; text-align:center; font-size:0.78rem; font-weight:bold;
+    z-index:20; display:none; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  }
 
   .car-screen{display:none; position:relative; height:calc(100% - 30px);}
   .car-screen.active{display:block;}
@@ -167,7 +178,10 @@
     <div class="statusbar">
       <button class="backbtn" id="backBtn">←</button>
       <div id="clock">10:32</div>
-      <div class="statusicons">📶 🔋</div>
+      <div class="statusbar-right">
+        <button class="mic-btn" id="micBtn" title="Talk to Gemini">🎤</button>
+        <div class="statusicons">📶 🔋</div>
+      </div>
     </div>
 
     <!-- ==== HOME ==== -->
@@ -294,6 +308,8 @@
         </div>
       </div>
     </div>
+
+    <div class="assistant-banner" id="assistantBanner"></div>
   </div>
 
   <footer>Made for Oliver 🚗</footer>
@@ -538,6 +554,105 @@ document.querySelectorAll(".split-tab").forEach(t => {
   });
 });
 renderMiniPlayer("spotify");
+
+// ---------- voice assistant ----------
+function showAssistantBanner(text, autoHideMs){
+  const banner = document.getElementById("assistantBanner");
+  clearTimeout(banner._hideTimeout);
+  banner.textContent = text;
+  banner.style.display = "block";
+  if (autoHideMs){
+    banner._hideTimeout = setTimeout(() => { banner.style.display = "none"; }, autoHideMs);
+  }
+}
+
+const VOICE_COMMANDS = [
+  { match:["main menu", "home screen", "dashboard"], reply:"Heading to the main menu!",
+    action: () => showCarScreen("home") },
+  { match:["open maps", "show maps"], reply:"Opening Maps!",
+    action: () => showCarScreen("maps") },
+  { match:["navigate home", "take me home", "drive home"], reply:"Navigating home!",
+    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="home"]').click(); } },
+  { match:["find food", "i'm hungry", "hungry", "food"], reply:"Finding food nearby!",
+    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="food"]').click(); } },
+  { match:["find gas", "need gas", "gas"], reply:"Finding gas nearby!",
+    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="gas"]').click(); } },
+  { match:["find coffee", "need coffee", "coffee"], reply:"Finding coffee nearby!",
+    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="coffee"]').click(); } },
+  { match:["find parking", "parking"], reply:"Finding parking nearby!",
+    action: () => { showCarScreen("maps"); document.querySelector('.category-btn[data-cat="parking"]').click(); } },
+  { match:["play music", "play song", "open spotify"], reply:"Playing some music!",
+    action: () => { showCarScreen("spotify"); if (!spotifyPlaying) document.getElementById("spotifyPlay").click(); } },
+  { match:["pause music", "stop music", "pause"], reply:"Music paused!",
+    action: () => { if (spotifyPlaying) document.getElementById("spotifyPlay").click(); } },
+  { match:["next song", "skip song", "skip"], reply:"Skipping to the next song!",
+    action: () => document.getElementById("spotifyNext").click() },
+  { match:["previous song", "last song", "go back a song"], reply:"Going back a song!",
+    action: () => document.getElementById("spotifyPrev").click() },
+  { match:["open teams", "start a call", "join meeting", "call someone"], reply:"Starting a call!",
+    action: () => { showCarScreen("teams"); document.getElementById("simulateCallBtn").click(); } },
+  { match:["hang up", "leave the call", "end call"], reply:"Ending the call!",
+    action: () => document.getElementById("leaveBtn").click() },
+  { match:["open pocket casts", "open podcast", "play podcast"], reply:"Playing your podcast!",
+    action: () => { showCarScreen("pocketcasts"); if (!pcPlaying) document.getElementById("pcPlay").click(); } },
+  { match:["multi screen", "split screen"], reply:"Switching to Multi-Screen!",
+    action: () => showCarScreen("multiscreen") },
+];
+
+function handleVoiceCommand(transcript){
+  const found = VOICE_COMMANDS.find(c => c.match.some(phrase => transcript.includes(phrase)));
+  if (found){
+    tone(880, 0, 0.1, "sine", 0.15);
+    tone(660, 0.08, 0.15, "sine", 0.12);
+    found.action();
+    showAssistantBanner(`✨ Gemini: ${found.reply}`, 2800);
+  } else {
+    tone(300, 0, 0.18, "sine", 0.12);
+    showAssistantBanner(`✨ Gemini: Sorry, I didn't catch a command in "${transcript}"`, 2800);
+  }
+}
+
+const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+const micBtn = document.getElementById("micBtn");
+let recognizing = false;
+let recognition = null;
+
+if (SpeechRecognitionImpl){
+  recognition = new SpeechRecognitionImpl();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    recognizing = true;
+    micBtn.classList.add("listening");
+    showAssistantBanner("🎙️ Listening...");
+  };
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript.toLowerCase().trim();
+    handleVoiceCommand(transcript);
+  };
+  recognition.onerror = () => {
+    showAssistantBanner("✨ Gemini: I didn't hear anything, try again!", 2800);
+  };
+  recognition.onend = () => {
+    recognizing = false;
+    micBtn.classList.remove("listening");
+  };
+}
+
+micBtn.addEventListener("click", () => {
+  if (!SpeechRecognitionImpl){
+    showAssistantBanner("✨ Gemini: Voice isn't supported in this browser", 3000);
+    return;
+  }
+  if (recognizing){
+    recognition.stop();
+    return;
+  }
+  tone(700, 0, 0.08, "sine", 0.1);
+  try { recognition.start(); } catch (err) { /* already starting */ }
+});
 </script>
 </body>
 </html>
