@@ -100,15 +100,10 @@
   }
   .nav-direction-panel{
     position:absolute; top:8px; left:8px; right:8px; background:rgba(17,24,39,0.95); color:#fff;
-    border-radius:14px; padding:10px 26px; z-index:4; text-align:center; font-size:0.85rem; font-weight:bold;
+    border-radius:14px; padding:10px; z-index:4; text-align:center; font-size:0.85rem; font-weight:bold;
     display:none;
   }
   .nav-direction-box.rerouting{background:rgba(217,101,50,0.92);}
-  .nav-banner-close{
-    position:absolute; top:6px; right:6px; background:none; border:none; color:#fff;
-    font-size:0.9rem; cursor:pointer; opacity:0.85; padding:2px 4px; display:none;
-  }
-  .nav-banner-close:active{transform:translateY(1px);}
   .map-search-row{display:flex; align-items:center; gap:6px;}
   .search-input{flex:1; background:rgba(255,255,255,0.92); border:none; border-radius:10px; padding:8px 10px; font-size:0.8rem; color:#333; font-family:inherit;}
   .quick-toggle-btn{
@@ -278,7 +273,6 @@
         <div class="no-results" id="noResultsMsg">No results</div>
       </div>
       <div class="nav-direction-panel nav-direction-box" id="navDirectionPanel">
-        <button class="nav-banner-close" id="navBannerClose" title="Stop trip">✖</button>
         <div class="nav-hint" id="navHint"></div>
       </div>
       <div class="nav-banner" id="navBanner">
@@ -520,7 +514,6 @@ const TRAFFIC_LEVELS = {
 
 function updateDriveControlsVisibility(){
   document.getElementById("driveControls").classList.toggle("visible", navigationActive);
-  document.getElementById("navBannerClose").style.display = navigationActive ? "block" : "none";
 }
 // While on a trip, the search bar is replaced up top with the turn-by-turn direction.
 function showDirectionPanel(){
@@ -549,7 +542,6 @@ function stopTrip(){
   document.querySelectorAll(".trip-info").forEach(el => el.style.display = "none");
   document.getElementById("destPin").style.display = "none";
 }
-document.getElementById("navBannerClose").addEventListener("click", stopTrip);
 document.querySelectorAll(".trip-exit-btn").forEach(btn => btn.addEventListener("click", (e) => {
   e.stopPropagation(); // don't let it bubble into the "tap map to expand" handler on Multi-Screen
   stopTrip();
