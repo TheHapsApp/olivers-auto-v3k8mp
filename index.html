@@ -48,6 +48,8 @@
   .backbtn{background:none; border:none; color:#e5e7eb; font-size:1.3rem; cursor:pointer; visibility:hidden; padding:0 4px;}
   .statusicons{font-size:0.85rem;}
   .statusbar-right{display:flex; align-items:center; gap:10px;}
+  .notif-btn{background:none; border:none; color:#e5e7eb; font-size:1rem; cursor:pointer; padding:0 2px; position:relative;}
+  .notif-dot{position:absolute; top:-2px; right:-2px; width:7px; height:7px; border-radius:50%; background:#ef4444; border:1.5px solid #111827;}
   .mic-btn{background:none; border:none; color:#e5e7eb; font-size:1rem; cursor:pointer; padding:0 2px;}
   .mic-btn.listening{animation:micPulse 0.8s ease-in-out infinite; color:#4285f4;}
   @keyframes micPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
@@ -73,8 +75,8 @@
   .car-label{font-size:0.7rem; color:#e5e7eb; font-weight:bold;}
   .car-icon.maps{background:#137333;}
   .car-icon.spotify{background:#1db954;}
-  .car-icon.teams{background:#5b5fc7;}
-  .car-icon.pocketcasts{background:#f43e37;}
+  .car-icon.phone{background:#2563eb;}
+  .car-icon.messages{background:#34c759;}
   .car-icon.multiscreen{background:#374151;}
 
   /* ---- maps ---- */
@@ -139,14 +141,13 @@
   }
   .category-btn:active{transform:translateY(2px);}
 
-  /* ---- spotify / pocket casts player ---- */
+  /* ---- spotify player ---- */
   .player-card{display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#e5e7eb; gap:8px; padding:10px;}
   .album-art{
     width:90px; height:90px; border-radius:16px; display:flex; align-items:center; justify-content:center;
     font-size:2.2rem; box-shadow:0 6px 10px rgba(0,0,0,0.3);
     background:linear-gradient(135deg,#1db954,#0e8a3e);
   }
-  .album-art.pc{background:linear-gradient(135deg,#f43e37,#b8231e);}
   .album-art.spinning{animation:spin 3s linear infinite;}
   @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
   .song-title{font-weight:bold; font-size:1rem;}
@@ -156,21 +157,12 @@
   .player-controls{display:flex; gap:16px; margin-top:4px;}
   .player-controls button{background:none; border:none; font-size:1.5rem; color:#e5e7eb; cursor:pointer;}
 
-  .waveform{display:flex; gap:4px; align-items:flex-end; height:22px;}
-  .waveform span{width:4px; background:#e5e7eb; height:6px; border-radius:2px; display:block;}
-  .waveform.playing span{animation:bounce 0.6s ease-in-out infinite alternate;}
-  .waveform.playing span:nth-child(2){animation-delay:0.1s;}
-  .waveform.playing span:nth-child(3){animation-delay:0.2s;}
-  .waveform.playing span:nth-child(4){animation-delay:0.3s;}
-  .waveform.playing span:nth-child(5){animation-delay:0.15s;}
-  @keyframes bounce{from{height:6px;}to{height:20px;}}
-
-  /* ---- teams ---- */
-  .teams-idle,.teams-incoming,.teams-active{
+  /* ---- phone ---- */
+  .phone-idle,.phone-incoming,.phone-active{
     display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; color:#e5e7eb;
   }
-  .teams-idle{display:flex;}
-  .teams-icon{font-size:2.2rem;}
+  .phone-idle{display:flex;}
+  .phone-icon{font-size:2.2rem;}
   .caller-name{font-weight:bold; font-size:1rem;}
   .call-actions{display:flex; gap:24px;}
   .call-btn{width:50px; height:50px; border-radius:50%; border:none; font-size:1.3rem; cursor:pointer; color:#fff;}
@@ -179,6 +171,33 @@
   .call-btn.leave{background:#ef4444; width:auto; border-radius:999px; padding:0 18px; font-size:0.9rem; font-weight:bold; height:40px;}
   .call-timer{font-size:1.2rem; font-weight:bold;}
   #simulateCallBtn{background:#fff; color:#111827; border:none; border-radius:999px; padding:9px 16px; font-weight:bold; cursor:pointer; font-family:inherit;}
+
+  /* ---- notifications ---- */
+  .notif-list{height:100%; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;}
+  .notif-card{
+    display:flex; align-items:center; gap:10px; background:#1f2937; border-radius:14px;
+    padding:10px 12px; text-align:left; box-shadow:0 3px 0 rgba(0,0,0,0.25);
+  }
+  .notif-emo{font-size:1.5rem; flex-shrink:0;}
+  .notif-body{flex:1; min-width:0;}
+  .notif-top{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .notif-title{font-size:0.82rem; font-weight:bold; color:#fff;}
+  .notif-time{font-size:0.65rem; color:#e5e7eb; opacity:0.6; flex-shrink:0; white-space:nowrap;}
+  .notif-msg{font-size:0.75rem; color:#e5e7eb; opacity:0.9; margin-top:2px;}
+  .msg-contact-btn{border:none; width:100%; font-family:inherit; cursor:pointer;}
+  .msg-contact-btn:active{transform:translateY(2px);}
+
+  /* ---- conversation ---- */
+  .convo-wrap{height:100%; display:flex; flex-direction:column;}
+  .convo-header{padding:8px 12px; font-weight:bold; color:#fff; font-size:0.9rem; display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .convo-thread{flex:1; overflow-y:auto; padding:6px 12px; display:flex; flex-direction:column; gap:8px;}
+  .convo-bubble{max-width:75%; padding:8px 12px; border-radius:14px; font-size:0.78rem; text-align:left; line-height:1.3;}
+  .convo-bubble.them{align-self:flex-start; background:#1f2937; color:#e5e7eb; border-bottom-left-radius:4px;}
+  .convo-bubble.me{align-self:flex-end; background:#4285f4; color:#fff; border-bottom-right-radius:4px;}
+  .convo-input-row{flex-shrink:0; display:flex; gap:6px; padding:8px 12px;}
+  .convo-input{flex:1; background:rgba(255,255,255,0.92); border:none; border-radius:10px; padding:8px 10px; font-size:0.8rem; color:#333; font-family:inherit;}
+  .convo-send-btn{flex-shrink:0; width:34px; height:34px; background:#4285f4; border:none; border-radius:50%; color:#fff; font-size:1rem; cursor:pointer;}
+  .convo-send-btn:active{transform:translateY(1px);}
 
   /* ---- multi-screen ---- */
   .split{display:flex; height:100%; gap:6px; padding:6px;}
@@ -244,6 +263,7 @@
       <button class="backbtn" id="backBtn">←</button>
       <div id="clock">10:32</div>
       <div class="statusbar-right">
+        <button class="notif-btn" id="notifBtn" title="Notifications">🔔<span class="notif-dot"></span></button>
         <button class="mic-btn" id="micBtn" title="Talk to Gemini">🎤</button>
         <div class="statusicons">📶 🔋</div>
       </div>
@@ -260,13 +280,13 @@
           <div class="car-icon spotify">🎵</div>
           <div class="car-label">Spotify</div>
         </button>
-        <button class="car-app" data-screen="teams">
-          <div class="car-icon teams">👥</div>
-          <div class="car-label">Teams</div>
+        <button class="car-app" data-screen="phone">
+          <div class="car-icon phone">📞</div>
+          <div class="car-label">Phone</div>
         </button>
-        <button class="car-app" data-screen="pocketcasts">
-          <div class="car-icon pocketcasts">🎧</div>
-          <div class="car-label">Pocket Casts</div>
+        <button class="car-app" data-screen="messages">
+          <div class="car-icon messages">💬</div>
+          <div class="car-label">Messages</div>
         </button>
         <button class="car-app" data-screen="multiscreen">
           <div class="car-icon multiscreen">⧉</div>
@@ -340,40 +360,119 @@
       </div>
     </div>
 
-    <!-- ==== TEAMS ==== -->
-    <div class="car-screen" id="screen-teams">
-      <div class="teams-idle" id="teamsIdle">
-        <div class="teams-icon">👥</div>
+    <!-- ==== PHONE ==== -->
+    <div class="car-screen" id="screen-phone">
+      <div class="phone-idle" id="phoneIdle">
+        <div class="phone-icon">📞</div>
         <div>No active calls</div>
         <button id="simulateCallBtn">📞 Simulate Call</button>
       </div>
-      <div class="teams-incoming" id="teamsIncoming">
-        <div class="teams-icon">👥</div>
-        <div class="caller-name">Team Meeting</div>
+      <div class="phone-incoming" id="phoneIncoming">
+        <div class="phone-icon">👩</div>
+        <div class="caller-name">Mom</div>
         <div class="call-actions">
           <button class="call-btn decline" id="declineBtn">✖</button>
           <button class="call-btn answer" id="answerBtn">📞</button>
         </div>
       </div>
-      <div class="teams-active" id="teamsActive">
-        <div class="teams-icon">👥</div>
-        <div class="caller-name">Team Meeting</div>
+      <div class="phone-active" id="phoneActive">
+        <div class="phone-icon">👩</div>
+        <div class="caller-name">Mom</div>
         <div class="call-timer" id="callTimer">00:00</div>
         <button class="call-btn leave" id="leaveBtn">✖ Leave</button>
       </div>
     </div>
 
-    <!-- ==== POCKET CASTS ==== -->
-    <div class="car-screen" id="screen-pocketcasts">
-      <div class="player-card">
-        <div class="album-art pc" id="pcArt">🎧</div>
-        <div class="song-title">Mystery Explorers</div>
-        <div class="song-artist">Ep. 42: The Hidden Cave</div>
-        <div class="waveform" id="pcWaveform"><span></span><span></span><span></span><span></span><span></span></div>
-        <div class="player-controls">
-          <button id="pcBack">⏪15</button>
-          <button id="pcPlay">▶️</button>
-          <button id="pcFwd">30⏩</button>
+    <!-- ==== MESSAGES ==== -->
+    <div class="car-screen" id="screen-messages">
+      <div class="notif-list">
+        <button class="notif-card msg-contact-btn" data-contact="mom">
+          <div class="notif-emo">👩</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <div class="notif-title">Mom</div>
+              <div class="notif-time" data-offset-min="2"></div>
+            </div>
+            <div class="notif-msg">Don't forget your soccer cleats! ⚽</div>
+          </div>
+        </button>
+        <button class="notif-card msg-contact-btn" data-contact="dad">
+          <div class="notif-emo">👨</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <div class="notif-title">Dad</div>
+              <div class="notif-time" data-offset-min="25"></div>
+            </div>
+            <div class="notif-msg">Can't wait to see you tonight! 🚗</div>
+          </div>
+        </button>
+        <button class="notif-card msg-contact-btn" data-contact="emma">
+          <div class="notif-emo">👧</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <div class="notif-title">Emma</div>
+              <div class="notif-time" data-offset-min="60"></div>
+            </div>
+            <div class="notif-msg">Race you to the park after school! 🏃💨</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==== CONVERSATION ==== -->
+    <div class="car-screen" id="screen-conversation">
+      <div class="convo-wrap">
+        <div class="convo-header" id="convoHeader"></div>
+        <div class="convo-thread" id="convoThread"></div>
+        <div class="convo-input-row">
+          <input type="text" class="convo-input" id="convoInput" placeholder="Type a message...">
+          <button class="convo-send-btn" id="convoSendBtn">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==== NOTIFICATIONS ==== -->
+    <div class="car-screen" id="screen-notifications">
+      <div class="notif-list">
+        <div class="notif-card">
+          <div class="notif-emo">💬</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <div class="notif-title">Messages</div>
+              <div class="notif-time" data-offset-min="0"></div>
+            </div>
+            <div class="notif-msg">You have 3 new messages</div>
+          </div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-emo">📅</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <div class="notif-title">Reminder</div>
+              <div class="notif-time" data-offset-min="10"></div>
+            </div>
+            <div class="notif-msg">Soccer practice at 4:00pm ⚽</div>
+          </div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-emo">🎵</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <div class="notif-title">Spotify</div>
+              <div class="notif-time" data-offset-min="60"></div>
+            </div>
+            <div class="notif-msg">Your road trip playlist is ready!</div>
+          </div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-emo">☀️</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <div class="notif-title">Weather</div>
+              <div class="notif-time" data-offset-min="300"></div>
+            </div>
+            <div class="notif-msg">Sunny today, 75°F — perfect for a drive!</div>
+          </div>
         </div>
       </div>
     </div>
@@ -400,8 +499,8 @@
         <div class="split-panel right">
           <div class="split-tabs">
             <button class="split-tab selected" data-app="spotify">🎵</button>
-            <button class="split-tab" data-app="teams">👥</button>
-            <button class="split-tab" data-app="pocketcasts">🎧</button>
+            <button class="split-tab" data-app="phone">📞</button>
+            <button class="split-tab" data-app="messages">💬</button>
           </div>
           <div class="mini-player" id="miniPlayer"></div>
         </div>
@@ -455,7 +554,7 @@ function tone(freq, start, dur, type, gainMax){
 // ---------- navigation ----------
 const backBtn = document.getElementById("backBtn");
 let ringInterval = null, callTimerInterval = null, spotifyInterval = null;
-let spotifyPlaying = false, pcPlaying = false, callSeconds = 0;
+let spotifyPlaying = false, callSeconds = 0;
 
 function resetAppStates(){
   clearInterval(ringInterval); ringInterval = null;
@@ -466,15 +565,11 @@ function resetAppStates(){
   document.getElementById("spotifyPlay").textContent = "▶️";
   document.getElementById("albumArt").classList.remove("spinning");
 
-  pcPlaying = false;
-  document.getElementById("pcPlay").textContent = "▶️";
-  document.getElementById("pcWaveform").classList.remove("playing");
-
   callSeconds = 0;
   document.getElementById("callTimer").textContent = "00:00";
-  document.getElementById("teamsIdle").style.display = "flex";
-  document.getElementById("teamsIncoming").style.display = "none";
-  document.getElementById("teamsActive").style.display = "none";
+  document.getElementById("phoneIdle").style.display = "flex";
+  document.getElementById("phoneIncoming").style.display = "none";
+  document.getElementById("phoneActive").style.display = "none";
 
   // A trip in progress keeps running when you switch screens (e.g. to
   // Multi-Screen) — only clear navigation state here if there's no active trip.
@@ -503,7 +598,9 @@ function resetAppStates(){
   updateDriveControlsVisibility();
 }
 
-function showCarScreen(id){
+let backTarget = "home";
+function showCarScreen(id, back = "home"){
+  backTarget = back;
   resetAppStates();
   document.querySelectorAll(".car-screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + id).classList.add("active");
@@ -513,7 +610,79 @@ function showCarScreen(id){
   }
 }
 document.querySelectorAll(".car-app").forEach(b => b.addEventListener("click", () => showCarScreen(b.dataset.screen)));
-backBtn.addEventListener("click", () => showCarScreen("home"));
+backBtn.addEventListener("click", () => showCarScreen(backTarget));
+document.getElementById("notifBtn").addEventListener("click", () => showCarScreen("notifications"));
+
+// ---------- time ago ----------
+function formatTimeAgo(ms){
+  const sec = Math.floor(ms / 1000);
+  if (sec < 60) return "Just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return min + " min ago";
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return hr + " hr ago";
+  const day = Math.floor(hr / 24);
+  return day + (day === 1 ? " day ago" : " days ago");
+}
+function updateAllTimeAgo(){
+  document.querySelectorAll(".notif-time[data-ts]").forEach(el => {
+    el.textContent = formatTimeAgo(Date.now() - Number(el.dataset.ts));
+  });
+}
+document.querySelectorAll(".notif-time[data-offset-min]").forEach(el => {
+  el.dataset.ts = Date.now() - parseFloat(el.dataset.offsetMin) * 60000;
+});
+updateAllTimeAgo();
+setInterval(updateAllTimeAgo, 15000);
+
+// ---------- messages ----------
+const CONTACTS = {
+  mom:  { name:"Mom",  emo:"👩", messages:[{from:"them", text:"Don't forget your soccer cleats! ⚽"}] },
+  dad:  { name:"Dad",  emo:"👨", messages:[{from:"them", text:"Can't wait to see you tonight! 🚗"}] },
+  emma: { name:"Emma", emo:"👧", messages:[{from:"them", text:"Race you to the park after school! 🏃💨"}] },
+};
+let activeContact = null;
+
+function renderConversation(contactId){
+  const c = CONTACTS[contactId];
+  document.getElementById("convoHeader").textContent = c.emo + " " + c.name;
+  const thread = document.getElementById("convoThread");
+  thread.innerHTML = "";
+  c.messages.forEach(m => {
+    const bubble = document.createElement("div");
+    bubble.className = "convo-bubble " + (m.from === "me" ? "me" : "them");
+    bubble.textContent = m.text;
+    thread.appendChild(bubble);
+  });
+  thread.scrollTop = thread.scrollHeight;
+}
+
+document.querySelectorAll(".msg-contact-btn").forEach(b => {
+  b.addEventListener("click", () => {
+    activeContact = b.dataset.contact;
+    renderConversation(activeContact);
+    showCarScreen("conversation", "messages");
+  });
+});
+
+function sendConvoMessage(){
+  const input = document.getElementById("convoInput");
+  const text = input.value.trim();
+  if (!text || !activeContact) return;
+  CONTACTS[activeContact].messages.push({from:"me", text});
+  input.value = "";
+  renderConversation(activeContact);
+  const listTimeEl = document.querySelector(`.msg-contact-btn[data-contact="${activeContact}"] .notif-time`);
+  if (listTimeEl){
+    listTimeEl.dataset.ts = Date.now();
+    updateAllTimeAgo();
+  }
+  tone(440, 0, 0.08, "triangle", 0.1);
+}
+document.getElementById("convoSendBtn").addEventListener("click", sendConvoMessage);
+document.getElementById("convoInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendConvoMessage();
+});
 
 // ---------- maps ----------
 const CATEGORIES = {
@@ -942,24 +1111,15 @@ document.getElementById("spotifyPlay").addEventListener("click", () => {
 document.getElementById("spotifyPrev").addEventListener("click", () => tone(330, 0, 0.1, "triangle", 0.1));
 document.getElementById("spotifyNext").addEventListener("click", () => tone(550, 0, 0.1, "triangle", 0.1));
 
-// ---------- pocket casts ----------
-document.getElementById("pcPlay").addEventListener("click", () => {
-  pcPlaying = !pcPlaying;
-  document.getElementById("pcPlay").textContent = pcPlaying ? "⏸" : "▶️";
-  document.getElementById("pcWaveform").classList.toggle("playing", pcPlaying);
-});
-document.getElementById("pcBack").addEventListener("click", () => tone(300, 0, 0.1, "triangle", 0.1));
-document.getElementById("pcFwd").addEventListener("click", () => tone(500, 0, 0.1, "triangle", 0.1));
-
-// ---------- teams ----------
+// ---------- phone ----------
 function formatTime(s){
   const m = Math.floor(s / 60);
   const sec = s % 60;
   return String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
 }
 document.getElementById("simulateCallBtn").addEventListener("click", () => {
-  document.getElementById("teamsIdle").style.display = "none";
-  document.getElementById("teamsIncoming").style.display = "flex";
+  document.getElementById("phoneIdle").style.display = "none";
+  document.getElementById("phoneIncoming").style.display = "flex";
   ringInterval = setInterval(() => {
     tone(600, 0, 0.15, "sine", 0.15);
     tone(500, 0.15, 0.15, "sine", 0.12);
@@ -967,8 +1127,8 @@ document.getElementById("simulateCallBtn").addEventListener("click", () => {
 });
 document.getElementById("answerBtn").addEventListener("click", () => {
   clearInterval(ringInterval); ringInterval = null;
-  document.getElementById("teamsIncoming").style.display = "none";
-  document.getElementById("teamsActive").style.display = "flex";
+  document.getElementById("phoneIncoming").style.display = "none";
+  document.getElementById("phoneActive").style.display = "flex";
   callSeconds = 0;
   callTimerInterval = setInterval(() => {
     callSeconds++;
@@ -977,13 +1137,13 @@ document.getElementById("answerBtn").addEventListener("click", () => {
 });
 document.getElementById("declineBtn").addEventListener("click", () => {
   clearInterval(ringInterval); ringInterval = null;
-  document.getElementById("teamsIncoming").style.display = "none";
-  document.getElementById("teamsIdle").style.display = "flex";
+  document.getElementById("phoneIncoming").style.display = "none";
+  document.getElementById("phoneIdle").style.display = "flex";
 });
 document.getElementById("leaveBtn").addEventListener("click", () => {
   clearInterval(callTimerInterval); callTimerInterval = null;
-  document.getElementById("teamsActive").style.display = "none";
-  document.getElementById("teamsIdle").style.display = "flex";
+  document.getElementById("phoneActive").style.display = "none";
+  document.getElementById("phoneIdle").style.display = "flex";
   document.getElementById("callTimer").textContent = "00:00";
 });
 
@@ -992,10 +1152,10 @@ function renderMiniPlayer(app){
   const el = document.getElementById("miniPlayer");
   if (app === "spotify"){
     el.innerHTML = `<div class="mini-album">🎵</div><div class="mini-title">Sunshine Groove</div><button class="mini-play" id="miniPlayBtn">▶️</button>`;
-  } else if (app === "teams"){
-    el.innerHTML = `<div class="mini-album">👥</div><div class="mini-title">No active calls</div>`;
+  } else if (app === "phone"){
+    el.innerHTML = `<div class="mini-album">📞</div><div class="mini-title">No active calls</div>`;
   } else {
-    el.innerHTML = `<div class="mini-album">🎧</div><div class="mini-title">Mystery Explorers</div><button class="mini-play" id="miniPlayBtn">▶️</button>`;
+    el.innerHTML = `<div class="mini-album">💬</div><div class="mini-title">3 new messages</div>`;
   }
   const playBtn = document.getElementById("miniPlayBtn");
   if (playBtn){
@@ -1046,12 +1206,12 @@ const VOICE_COMMANDS = [
     action: () => document.getElementById("spotifyNext").click() },
   { match:["previous song", "last song", "go back a song"], reply:"Going back a song!",
     action: () => document.getElementById("spotifyPrev").click() },
-  { match:["open teams", "start a call", "join meeting", "call someone"], reply:"Starting a call!",
-    action: () => { showCarScreen("teams"); document.getElementById("simulateCallBtn").click(); } },
+  { match:["open phone", "start a call", "call someone"], reply:"Starting a call!",
+    action: () => { showCarScreen("phone"); document.getElementById("simulateCallBtn").click(); } },
   { match:["hang up", "leave the call", "end call"], reply:"Ending the call!",
     action: () => document.getElementById("leaveBtn").click() },
-  { match:["open pocket casts", "open podcast", "play podcast"], reply:"Playing your podcast!",
-    action: () => { showCarScreen("pocketcasts"); if (!pcPlaying) document.getElementById("pcPlay").click(); } },
+  { match:["open messages", "read my messages", "check messages"], reply:"Here are your messages!",
+    action: () => showCarScreen("messages") },
   { match:["multi screen", "split screen"], reply:"Switching to Multi-Screen!",
     action: () => showCarScreen("multiscreen") },
 ];
