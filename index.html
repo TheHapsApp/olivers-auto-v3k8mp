@@ -632,6 +632,10 @@ function showCarScreen(id, back = "home"){
   document.querySelectorAll(".car-screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + id).classList.add("active");
   backBtn.style.visibility = id === "home" ? "hidden" : "visible";
+  // resetAppStates() ran before the .active class above was set, so its
+  // drive-controls-visibility check saw the OLD screen — recompute now that
+  // the new screen is actually active.
+  updateDriveControlsVisibility();
   if (id === "maps" && navigationActive){
     updateNavBanner(); // refresh the ETA/arrival clock in case time passed while away
   }
@@ -831,8 +835,14 @@ const ROUTES = {
   quiet:    { label:"Avoid Highways",  emoji:"🌿", speedMultiplier:0.8 },
 };
 
+// Drive controls show whenever there's an active trip (navigationActive —
+// and then follow you to any screen, same as before) OR whenever you're
+// just looking at a map view (Maps/Multi-Screen) with no trip started —
+// so you can freely move the car around without having to navigate
+// somewhere first.
 function updateDriveControlsVisibility(){
-  document.getElementById("driveControls").classList.toggle("visible", navigationActive);
+  const onMapView = currentScreenId() === "maps" || currentScreenId() === "multiscreen";
+  document.getElementById("driveControls").classList.toggle("visible", navigationActive || onMapView);
 }
 // While on a trip, the search bar is replaced up top with the turn-by-turn direction.
 function showDirectionPanel(){
