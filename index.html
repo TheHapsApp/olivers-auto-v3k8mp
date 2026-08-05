@@ -142,7 +142,18 @@
   .category-btn:active{transform:translateY(2px);}
 
   /* ---- spotify player ---- */
-  .player-card{display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#e5e7eb; gap:8px; padding:10px;}
+  .spotify-wrap{height:100%; display:flex; flex-direction:column;}
+  .spotify-search-panel{flex-shrink:0; padding:8px 10px 0;}
+  .song-results{max-height:92px; overflow-y:auto; margin-top:6px; display:flex; flex-direction:column; gap:4px;}
+  .song-result{
+    display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:none; border-radius:8px;
+    padding:6px 8px; color:#e5e7eb; font-size:0.72rem; text-align:left; cursor:pointer; font-family:inherit; width:100%;
+  }
+  .song-result:active{transform:translateY(1px);}
+  .song-result.active{background:rgba(255,255,255,0.28);}
+  .song-result-art{font-size:1rem; flex-shrink:0;}
+  .song-result-artist{opacity:0.7; margin-left:4px;}
+  .player-card{display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; min-height:0; color:#e5e7eb; gap:8px; padding:10px;}
   .album-art{
     width:90px; height:90px; border-radius:16px; display:flex; align-items:center; justify-content:center;
     font-size:2.2rem; box-shadow:0 6px 10px rgba(0,0,0,0.3);
@@ -158,19 +169,28 @@
   .player-controls button{background:none; border:none; font-size:1.5rem; color:#e5e7eb; cursor:pointer;}
 
   /* ---- phone ---- */
-  .phone-idle,.phone-incoming,.phone-active{
+  .phone-idle,.phone-calling,.phone-active{
     display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; color:#e5e7eb;
   }
   .phone-idle{display:flex;}
   .phone-icon{font-size:2.2rem;}
+  .phone-icon.ringing{animation:micPulse 0.8s ease-in-out infinite;}
   .caller-name{font-weight:bold; font-size:1rem;}
+  .calling-label{font-size:0.8rem; opacity:0.8;}
   .call-actions{display:flex; gap:24px;}
   .call-btn{width:50px; height:50px; border-radius:50%; border:none; font-size:1.3rem; cursor:pointer; color:#fff;}
   .call-btn.answer{background:#22c55e;}
   .call-btn.decline{background:#ef4444;}
   .call-btn.leave{background:#ef4444; width:auto; border-radius:999px; padding:0 18px; font-size:0.9rem; font-weight:bold; height:40px;}
   .call-timer{font-size:1.2rem; font-weight:bold;}
-  #simulateCallBtn{background:#fff; color:#111827; border:none; border-radius:999px; padding:9px 16px; font-weight:bold; cursor:pointer; font-family:inherit;}
+  .contact-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:280px;}
+  .contact-btn{
+    background:rgba(255,255,255,0.12); border:none; border-radius:12px; padding:10px 6px; color:#e5e7eb;
+    font-size:0.8rem; font-weight:bold; cursor:pointer; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .contact-btn:active{transform:translateY(2px);}
+  .contact-emo{font-size:1.6rem;}
 
   /* ---- notifications ---- */
   .notif-list{height:100%; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;}
@@ -194,6 +214,8 @@
   .convo-bubble{max-width:75%; padding:8px 12px; border-radius:14px; font-size:0.78rem; text-align:left; line-height:1.3;}
   .convo-bubble.them{align-self:flex-start; background:#1f2937; color:#e5e7eb; border-bottom-left-radius:4px;}
   .convo-bubble.me{align-self:flex-end; background:#4285f4; color:#fff; border-bottom-right-radius:4px;}
+  .convo-bubble.typing{animation:typingPulse 1s ease-in-out infinite;}
+  @keyframes typingPulse{0%,100%{opacity:0.4;}50%{opacity:0.9;}}
   .convo-input-row{flex-shrink:0; display:flex; gap:6px; padding:8px 12px;}
   .convo-input{flex:1; background:rgba(255,255,255,0.92); border:none; border-radius:10px; padding:8px 10px; font-size:0.8rem; color:#333; font-family:inherit;}
   .convo-send-btn{flex-shrink:0; width:34px; height:34px; background:#4285f4; border:none; border-radius:50%; color:#fff; font-size:1rem; cursor:pointer;}
@@ -347,15 +369,21 @@
 
     <!-- ==== SPOTIFY ==== -->
     <div class="car-screen" id="screen-spotify">
-      <div class="player-card">
-        <div class="album-art" id="albumArt">🎵</div>
-        <div class="song-title">Sunshine Groove</div>
-        <div class="song-artist">The Backseat Band</div>
-        <div class="progress-bar"><div class="progress-fill"></div></div>
-        <div class="player-controls">
-          <button id="spotifyPrev">⏮</button>
-          <button id="spotifyPlay">▶️</button>
-          <button id="spotifyNext">⏭</button>
+      <div class="spotify-wrap">
+        <div class="spotify-search-panel">
+          <input type="text" class="search-input" id="songSearchInput" placeholder="🔍 Search songs...">
+          <div class="song-results" id="songResults"></div>
+        </div>
+        <div class="player-card">
+          <div class="album-art" id="albumArt">🎵</div>
+          <div class="song-title" id="songTitle">Sunshine Groove</div>
+          <div class="song-artist" id="songArtist">The Backseat Band</div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <div class="player-controls">
+            <button id="spotifyPrev">⏮</button>
+            <button id="spotifyPlay">▶️</button>
+            <button id="spotifyNext">⏭</button>
+          </div>
         </div>
       </div>
     </div>
@@ -364,20 +392,18 @@
     <div class="car-screen" id="screen-phone">
       <div class="phone-idle" id="phoneIdle">
         <div class="phone-icon">📞</div>
-        <div>No active calls</div>
-        <button id="simulateCallBtn">📞 Simulate Call</button>
+        <div>Who do you want to call?</div>
+        <div class="contact-grid" id="phoneContactGrid"></div>
       </div>
-      <div class="phone-incoming" id="phoneIncoming">
-        <div class="phone-icon">👩</div>
-        <div class="caller-name">Mom</div>
-        <div class="call-actions">
-          <button class="call-btn decline" id="declineBtn">✖</button>
-          <button class="call-btn answer" id="answerBtn">📞</button>
-        </div>
+      <div class="phone-calling" id="phoneCalling">
+        <div class="phone-icon ringing" id="callingIcon">👩</div>
+        <div class="caller-name" id="callingName">Mom</div>
+        <div class="calling-label">Calling...</div>
+        <button class="call-btn decline" id="cancelCallBtn">✖</button>
       </div>
       <div class="phone-active" id="phoneActive">
-        <div class="phone-icon">👩</div>
-        <div class="caller-name">Mom</div>
+        <div class="phone-icon" id="activeIcon">👩</div>
+        <div class="caller-name" id="activeName">Mom</div>
         <div class="call-timer" id="callTimer">00:00</div>
         <button class="call-btn leave" id="leaveBtn">✖ Leave</button>
       </div>
@@ -553,13 +579,14 @@ function tone(freq, start, dur, type, gainMax){
 
 // ---------- navigation ----------
 const backBtn = document.getElementById("backBtn");
-let ringInterval = null, callTimerInterval = null, spotifyInterval = null;
+let ringInterval = null, callTimerInterval = null, spotifyInterval = null, callConnectTimeout = null;
 let spotifyPlaying = false, callSeconds = 0;
 
 function resetAppStates(){
   clearInterval(ringInterval); ringInterval = null;
   clearInterval(callTimerInterval); callTimerInterval = null;
   clearInterval(spotifyInterval); spotifyInterval = null;
+  clearTimeout(callConnectTimeout); callConnectTimeout = null;
 
   spotifyPlaying = false;
   document.getElementById("spotifyPlay").textContent = "▶️";
@@ -568,7 +595,7 @@ function resetAppStates(){
   callSeconds = 0;
   document.getElementById("callTimer").textContent = "00:00";
   document.getElementById("phoneIdle").style.display = "flex";
-  document.getElementById("phoneIncoming").style.display = "none";
+  document.getElementById("phoneCalling").style.display = "none";
   document.getElementById("phoneActive").style.display = "none";
 
   // A trip in progress keeps running when you switch screens (e.g. to
@@ -641,6 +668,44 @@ const CONTACTS = {
   dad:  { name:"Dad",  emo:"👨", messages:[{from:"them", text:"Can't wait to see you tonight! 🚗"}] },
   emma: { name:"Emma", emo:"👧", messages:[{from:"them", text:"Race you to the park after school! 🏃💨"}] },
 };
+const REPLY_RULES = {
+  mom: [
+    { keywords:["love", "miss"], reply:"Aww, love you too! 💕" },
+    { keywords:["soccer", "practice", "cleats", "game"], reply:"Good luck out there! ⚽" },
+    { keywords:["hungry", "food", "dinner", "eat", "snack"], reply:"I'll have dinner ready when you get home!" },
+    { keywords:["late", "traffic", "almost", "close", "minutes"], reply:"No rush, drive safe! 🚗" },
+    { keywords:["homework", "school", "test", "quiz"], reply:"Make sure that homework's done first!" },
+    { keywords:["?"], reply:"Good question — let's talk about it when you're home!" },
+  ],
+  dad: [
+    { keywords:["game", "score", "win", "sports", "team"], reply:"Go team! 🏆" },
+    { keywords:["homework", "school", "test", "quiz"], reply:"Make sure that homework's done!" },
+    { keywords:["tired", "sleepy", "nap"], reply:"Get some rest, buddy." },
+    { keywords:["hungry", "food", "dinner", "eat"], reply:"I'll grab something on the way home!" },
+    { keywords:["love", "miss"], reply:"Love you too, kiddo! 💙" },
+    { keywords:["?"], reply:"Hmm, let me think about that one!" },
+  ],
+  emma: [
+    { keywords:["park", "race", "play"], reply:"Race is on! 🏃" },
+    { keywords:["game", "video"], reply:"Can I play too?! 🎮" },
+    { keywords:["homework", "school", "test", "quiz"], reply:"Ugh, homework. 😩" },
+    { keywords:["hungry", "food", "snack"], reply:"I'm hungry too! Let's get snacks!" },
+    { keywords:["?"], reply:"Ooh good question, idk! 😂" },
+  ],
+};
+const FALLBACK_REPLIES = {
+  mom:  ["Okay, love you! 💕", "Sounds good, see you soon!"],
+  dad:  ["Sounds like a plan!", "You got it, kiddo! 👍"],
+  emma: ["Haha okay!", "Yay! 🎉"],
+};
+function pickReply(contactId, text){
+  const lower = text.toLowerCase();
+  const rules = REPLY_RULES[contactId] || [];
+  const match = rules.find(rule => rule.keywords.some(k => lower.includes(k)));
+  if (match) return match.reply;
+  const fallback = FALLBACK_REPLIES[contactId];
+  return fallback[Math.floor(Math.random() * fallback.length)];
+}
 let activeContact = null;
 
 function renderConversation(contactId){
@@ -657,6 +722,37 @@ function renderConversation(contactId){
   thread.scrollTop = thread.scrollHeight;
 }
 
+function bumpContactPreview(contactId, text){
+  const card = document.querySelector(`.msg-contact-btn[data-contact="${contactId}"]`);
+  if (!card) return;
+  const timeEl = card.querySelector(".notif-time");
+  const msgEl = card.querySelector(".notif-msg");
+  if (timeEl){ timeEl.dataset.ts = Date.now(); updateAllTimeAgo(); }
+  if (msgEl) msgEl.textContent = text;
+}
+
+function showTypingIndicator(){
+  const thread = document.getElementById("convoThread");
+  const typing = document.createElement("div");
+  typing.className = "convo-bubble them typing";
+  typing.id = "typingBubble";
+  typing.textContent = "· · ·";
+  thread.appendChild(typing);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function scheduleAutoReply(contactId, text){
+  const reply = pickReply(contactId, text);
+  setTimeout(() => {
+    CONTACTS[contactId].messages.push({from:"them", text: reply});
+    bumpContactPreview(contactId, reply);
+    if (activeContact === contactId && document.getElementById("screen-conversation").classList.contains("active")){
+      renderConversation(contactId);
+      tone(660, 0, 0.1, "sine", 0.12);
+    }
+  }, 1200 + Math.random() * 800);
+}
+
 document.querySelectorAll(".msg-contact-btn").forEach(b => {
   b.addEventListener("click", () => {
     activeContact = b.dataset.contact;
@@ -669,15 +765,14 @@ function sendConvoMessage(){
   const input = document.getElementById("convoInput");
   const text = input.value.trim();
   if (!text || !activeContact) return;
-  CONTACTS[activeContact].messages.push({from:"me", text});
+  const contactId = activeContact;
+  CONTACTS[contactId].messages.push({from:"me", text});
   input.value = "";
-  renderConversation(activeContact);
-  const listTimeEl = document.querySelector(`.msg-contact-btn[data-contact="${activeContact}"] .notif-time`);
-  if (listTimeEl){
-    listTimeEl.dataset.ts = Date.now();
-    updateAllTimeAgo();
-  }
+  renderConversation(contactId);
+  bumpContactPreview(contactId, text);
   tone(440, 0, 0.08, "triangle", 0.1);
+  showTypingIndicator();
+  scheduleAutoReply(contactId, text);
 }
 document.getElementById("convoSendBtn").addEventListener("click", sendConvoMessage);
 document.getElementById("convoInput").addEventListener("keydown", (e) => {
@@ -1089,7 +1184,60 @@ document.getElementById("tripMoreBtn").addEventListener("click", () => {
 });
 
 // ---------- spotify ----------
-const SPOTIFY_NOTES = [392.00, 440.00, 523.25, 440.00];
+const SONGS = [
+  { title:"Sunshine Groove",       artist:"The Backseat Band",  art:"🎵", notes:[392.00, 440.00, 523.25, 440.00] },
+  { title:"Road Trip Anthem",      artist:"The Backseat Band",  art:"🚗", notes:[261.63, 329.63, 392.00, 523.25] },
+  { title:"Backseat Dance Party",  artist:"The Backseat Band",  art:"💃", notes:[329.63, 392.00, 493.88, 392.00] },
+  { title:"Windows Down",          artist:"Sunny Sound Crew",   art:"🌞", notes:[440.00, 523.25, 659.25, 523.25] },
+  { title:"Rearview Mirror",       artist:"Sunny Sound Crew",   art:"🪞", notes:[659.25, 523.25, 440.00, 392.00] },
+  { title:"Highway Star",          artist:"Turbo Kids",         art:"⭐", notes:[293.66, 349.23, 440.00, 587.33] },
+  { title:"Bumpy Road Blues",      artist:"Turbo Kids",         art:"🎸", notes:[349.23, 440.00, 523.25, 440.00] },
+  { title:"Pit Stop Playlist",     artist:"Turbo Kids",         art:"⛽", notes:[523.25, 587.33, 523.25, 392.00] },
+  { title:"Shivers",               artist:"Ed Sheeran",         art:"❄️", notes:[659.25, 587.33, 659.25, 523.25] },
+];
+let currentSongIndex = 0;
+let spotifyNoteIndex = 0;
+
+function loadSong(index){
+  currentSongIndex = ((index % SONGS.length) + SONGS.length) % SONGS.length;
+  const s = SONGS[currentSongIndex];
+  document.getElementById("songTitle").textContent = s.title;
+  document.getElementById("songArtist").textContent = s.artist;
+  document.getElementById("albumArt").textContent = s.art;
+  spotifyNoteIndex = 0;
+  renderSongResults(document.getElementById("songSearchInput").value);
+}
+
+function playSong(index){
+  loadSong(index);
+  if (!spotifyPlaying) document.getElementById("spotifyPlay").click();
+}
+
+function renderSongResults(query){
+  const q = query.trim().toLowerCase();
+  const box = document.getElementById("songResults");
+  box.innerHTML = "";
+  const matches = SONGS.filter(s => !q || s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+  if (!matches.length){
+    const empty = document.createElement("div");
+    empty.className = "no-results";
+    empty.style.display = "block";
+    empty.textContent = "No songs found";
+    box.appendChild(empty);
+    return;
+  }
+  matches.forEach(s => {
+    const idx = SONGS.indexOf(s);
+    const btn = document.createElement("button");
+    btn.className = "song-result" + (idx === currentSongIndex ? " active" : "");
+    btn.innerHTML = `<span class="song-result-art">${s.art}</span><span>${s.title}<span class="song-result-artist">${s.artist}</span></span>`;
+    btn.addEventListener("click", () => playSong(idx));
+    box.appendChild(btn);
+  });
+}
+document.getElementById("songSearchInput").addEventListener("input", (e) => renderSongResults(e.target.value));
+renderSongResults("");
+
 document.getElementById("spotifyPlay").addEventListener("click", () => {
   spotifyPlaying = !spotifyPlaying;
   const btn = document.getElementById("spotifyPlay");
@@ -1097,10 +1245,10 @@ document.getElementById("spotifyPlay").addEventListener("click", () => {
   if (spotifyPlaying){
     btn.textContent = "⏸";
     art.classList.add("spinning");
-    let i = 0;
     spotifyInterval = setInterval(() => {
-      tone(SPOTIFY_NOTES[i % SPOTIFY_NOTES.length], 0, 0.35, "sine", 0.1);
-      i++;
+      const notes = SONGS[currentSongIndex].notes;
+      tone(notes[spotifyNoteIndex % notes.length], 0, 0.35, "sine", 0.1);
+      spotifyNoteIndex++;
     }, 450);
   } else {
     btn.textContent = "▶️";
@@ -1108,8 +1256,14 @@ document.getElementById("spotifyPlay").addEventListener("click", () => {
     clearInterval(spotifyInterval);
   }
 });
-document.getElementById("spotifyPrev").addEventListener("click", () => tone(330, 0, 0.1, "triangle", 0.1));
-document.getElementById("spotifyNext").addEventListener("click", () => tone(550, 0, 0.1, "triangle", 0.1));
+document.getElementById("spotifyPrev").addEventListener("click", () => {
+  loadSong(currentSongIndex - 1);
+  tone(330, 0, 0.1, "triangle", 0.1);
+});
+document.getElementById("spotifyNext").addEventListener("click", () => {
+  loadSong(currentSongIndex + 1);
+  tone(550, 0, 0.1, "triangle", 0.1);
+});
 
 // ---------- phone ----------
 function formatTime(s){
@@ -1117,27 +1271,43 @@ function formatTime(s){
   const sec = s % 60;
   return String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
 }
-document.getElementById("simulateCallBtn").addEventListener("click", () => {
+const phoneContactGrid = document.getElementById("phoneContactGrid");
+Object.keys(CONTACTS).forEach(contactId => {
+  const c = CONTACTS[contactId];
+  const btn = document.createElement("button");
+  btn.className = "contact-btn";
+  btn.innerHTML = `<span class="contact-emo">${c.emo}</span><span>${c.name}</span>`;
+  btn.addEventListener("click", () => callContact(contactId));
+  phoneContactGrid.appendChild(btn);
+});
+
+function callContact(contactId){
+  const c = CONTACTS[contactId];
   document.getElementById("phoneIdle").style.display = "none";
-  document.getElementById("phoneIncoming").style.display = "flex";
+  document.getElementById("callingIcon").textContent = c.emo;
+  document.getElementById("callingName").textContent = c.name;
+  document.getElementById("phoneCalling").style.display = "flex";
   ringInterval = setInterval(() => {
     tone(600, 0, 0.15, "sine", 0.15);
     tone(500, 0.15, 0.15, "sine", 0.12);
   }, 1200);
-});
-document.getElementById("answerBtn").addEventListener("click", () => {
+  callConnectTimeout = setTimeout(() => {
+    clearInterval(ringInterval); ringInterval = null;
+    document.getElementById("phoneCalling").style.display = "none";
+    document.getElementById("activeIcon").textContent = c.emo;
+    document.getElementById("activeName").textContent = c.name;
+    document.getElementById("phoneActive").style.display = "flex";
+    callSeconds = 0;
+    callTimerInterval = setInterval(() => {
+      callSeconds++;
+      document.getElementById("callTimer").textContent = formatTime(callSeconds);
+    }, 1000);
+  }, 2200);
+}
+document.getElementById("cancelCallBtn").addEventListener("click", () => {
   clearInterval(ringInterval); ringInterval = null;
-  document.getElementById("phoneIncoming").style.display = "none";
-  document.getElementById("phoneActive").style.display = "flex";
-  callSeconds = 0;
-  callTimerInterval = setInterval(() => {
-    callSeconds++;
-    document.getElementById("callTimer").textContent = formatTime(callSeconds);
-  }, 1000);
-});
-document.getElementById("declineBtn").addEventListener("click", () => {
-  clearInterval(ringInterval); ringInterval = null;
-  document.getElementById("phoneIncoming").style.display = "none";
+  clearTimeout(callConnectTimeout); callConnectTimeout = null;
+  document.getElementById("phoneCalling").style.display = "none";
   document.getElementById("phoneIdle").style.display = "flex";
 });
 document.getElementById("leaveBtn").addEventListener("click", () => {
@@ -1151,7 +1321,8 @@ document.getElementById("leaveBtn").addEventListener("click", () => {
 function renderMiniPlayer(app){
   const el = document.getElementById("miniPlayer");
   if (app === "spotify"){
-    el.innerHTML = `<div class="mini-album">🎵</div><div class="mini-title">Sunshine Groove</div><button class="mini-play" id="miniPlayBtn">▶️</button>`;
+    const s = SONGS[currentSongIndex];
+    el.innerHTML = `<div class="mini-album">${s.art}</div><div class="mini-title">${s.title}</div><button class="mini-play" id="miniPlayBtn">▶️</button>`;
   } else if (app === "phone"){
     el.innerHTML = `<div class="mini-album">📞</div><div class="mini-title">No active calls</div>`;
   } else {
@@ -1183,21 +1354,36 @@ function showAssistantBanner(text, autoHideMs){
   }
 }
 
+// Starting navigation by voice while already on Multi-Screen shouldn't kick
+// you off it — the mini-map in the Multi-Screen split view already mirrors
+// the same navDestination/navBanner/miniNavHint state as the full Maps
+// screen (see showDirectionPanel/hideDirectionPanel), so it's enough to just
+// start the trip without switching screens. Only jump to full Maps if you
+// weren't already looking at a live map view.
+function currentScreenId(){
+  const active = document.querySelector(".car-screen.active");
+  return active ? active.id.replace("screen-", "") : null;
+}
+function startNavFromVoice(catId){
+  if (currentScreenId() !== "multiscreen") showCarScreen("maps");
+  goToPlace(catId);
+}
+
 const VOICE_COMMANDS = [
   { match:["main menu", "home screen", "dashboard"], reply:"Heading to the main menu!",
     action: () => showCarScreen("home") },
   { match:["open maps", "show maps"], reply:"Opening Maps!",
     action: () => showCarScreen("maps") },
   { match:["navigate home", "take me home", "drive home"], reply:"Navigating home!",
-    action: () => { showCarScreen("maps"); goToPlace("home"); } },
+    action: () => startNavFromVoice("home") },
   { match:["find food", "i'm hungry", "hungry", "food"], reply:"Finding food nearby!",
-    action: () => { showCarScreen("maps"); goToPlace("food"); } },
+    action: () => startNavFromVoice("food") },
   { match:["find gas", "need gas", "gas"], reply:"Finding gas nearby!",
-    action: () => { showCarScreen("maps"); goToPlace("gas"); } },
+    action: () => startNavFromVoice("gas") },
   { match:["find coffee", "need coffee", "coffee"], reply:"Finding coffee nearby!",
-    action: () => { showCarScreen("maps"); goToPlace("coffee"); } },
+    action: () => startNavFromVoice("coffee") },
   { match:["find parking", "parking"], reply:"Finding parking nearby!",
-    action: () => { showCarScreen("maps"); goToPlace("parking"); } },
+    action: () => startNavFromVoice("parking") },
   { match:["play music", "play song", "open spotify"], reply:"Playing some music!",
     action: () => { showCarScreen("spotify"); if (!spotifyPlaying) document.getElementById("spotifyPlay").click(); } },
   { match:["pause music", "stop music", "pause"], reply:"Music paused!",
@@ -1206,8 +1392,14 @@ const VOICE_COMMANDS = [
     action: () => document.getElementById("spotifyNext").click() },
   { match:["previous song", "last song", "go back a song"], reply:"Going back a song!",
     action: () => document.getElementById("spotifyPrev").click() },
-  { match:["open phone", "start a call", "call someone"], reply:"Starting a call!",
-    action: () => { showCarScreen("phone"); document.getElementById("simulateCallBtn").click(); } },
+  { match:["open phone"], reply:"Opening Phone!",
+    action: () => showCarScreen("phone") },
+  { match:["call mom"], reply:"Calling Mom!",
+    action: () => { showCarScreen("phone"); callContact("mom"); } },
+  { match:["call dad"], reply:"Calling Dad!",
+    action: () => { showCarScreen("phone"); callContact("dad"); } },
+  { match:["call emma"], reply:"Calling Emma!",
+    action: () => { showCarScreen("phone"); callContact("emma"); } },
   { match:["hang up", "leave the call", "end call"], reply:"Ending the call!",
     action: () => document.getElementById("leaveBtn").click() },
   { match:["open messages", "read my messages", "check messages"], reply:"Here are your messages!",
