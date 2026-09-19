@@ -552,7 +552,7 @@
 // ---------- clock ----------
 function updateClock(){
   const now = new Date();
-  document.getElementById("clock").textContent = now.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  document.getElementById("clock").textContent = now.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" });
 }
 updateClock();
 setInterval(updateClock, 1000);
@@ -932,7 +932,7 @@ function updateTripInfo(distancePercent){
   const arrival = new Date(Date.now() + minutes * 60000);
   const timeText = `${minutes} min`;
   const distanceText = formatDistance(distanceMiles);
-  const arrivalText = `Arrive ${arrival.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}`;
+  const arrivalText = `Arrive ${arrival.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" })}`;
   const routeText = `${route.emoji} ${route.label}`;
 
   document.querySelectorAll(".trip-info").forEach(el => el.style.display = "flex");
